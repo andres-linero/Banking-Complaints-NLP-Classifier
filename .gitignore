@@ -1,0 +1,50 @@
+# macOS / editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Python environments
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Python caches / build output
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+build/
+dist/
+
+# Test / coverage output
+.coverage
+coverage.xml
+htmlcov/
+
+# Generated NLP assets
+nltk_data/
+
+# Trained model artifacts
+models/*.joblib
+models/*.pkl
+models/*.pt
+models/*.bin
+models/*.safetensors
+models/bert*/
+
+# Generated reports / experiment output
+reports/*.csv
+reports/*.json
+reports/*.txt
+mlruns/
+wandb/
+
+# Local databases / logs
+*.sqlite
+*.sqlite3
+*.log
