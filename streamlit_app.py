@@ -112,17 +112,23 @@ st.markdown(
     }
     section[data-testid="stSidebar"] {
         background: #ffffff;
+        border-right: 1px solid #e2e8f0;
     }
-    div[data-testid="stTabs"] button {
-        font-size: 0.95rem;
-        font-weight: 650;
-        color: #475569;
+    section[data-testid="stSidebar"] > div {
+        padding-top: 1.4rem;
     }
-    div[data-testid="stTabs"] button[aria-selected="true"] {
-        color: #2563eb;
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] p {
+        color: #0f172a;
     }
-    div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
-        background-color: #2563eb;
+    section[data-testid="stSidebar"] div[role="radiogroup"] label {
+        border-radius: 8px;
+        padding: 0.42rem 0.35rem;
+        margin-bottom: 0.15rem;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+        background: #eff6ff;
     }
     div[data-testid="stTextArea"] textarea {
         color: #0f172a;
@@ -519,6 +525,30 @@ def render_prediction_monitor(metrics: dict) -> None:
         ]
     )
 
+
+def render_sidebar(metrics: dict) -> str:
+    ensure_prediction_state()
+    events = st.session_state.prediction_events
+    last_event = events[0] if events else {}
+
+    with st.sidebar:
+        st.markdown("## Banking NLP")
+        st.caption("Classifier workspace")
+        page = st.radio(
+            "Navigation",
+            ["Prediction Lab", "Model Performance", "Training Data", "Sample Predictions"],
+            label_visibility="collapsed",
+        )
+        st.divider()
+        st.metric("Saved accuracy", metric_value(metrics, "accuracy"))
+        st.metric("Session calls", len(events))
+        st.metric("Last category", last_event.get("prediction", "none"))
+        if last_event:
+            st.caption(f"Last response: {last_event['latency_ms']:.0f} ms")
+
+    return page
+
+
 def render_prediction_history() -> None:
     ensure_prediction_state()
     events = st.session_state.prediction_events
@@ -826,16 +856,16 @@ def main() -> None:
     df = load_dashboard_data()
     metrics = load_metrics()
 
+    page = render_sidebar(metrics)
     render_prediction_monitor(metrics)
 
-    tabs = st.tabs(["Prediction Lab", "Model Performance", "Training Data", "Sample Predictions"])
-    with tabs[0]:
+    if page == "Prediction Lab":
         render_classifier(df)
-    with tabs[1]:
+    elif page == "Model Performance":
         render_model_section(metrics)
-    with tabs[2]:
+    elif page == "Training Data":
         render_data_overview(df)
-    with tabs[3]:
+    else:
         render_training_predictions(df)
 
 

@@ -73,21 +73,29 @@ Then open:
 http://localhost:8501
 ```
 
-## Local Environment
+## Local Setup
 
-Create and activate the virtual environment:
+Create the virtual environment and install the project:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements-dev.txt
-python -m spacy download en_core_web_sm
 python -m pip install -e .
+```
+
+The spaCy English model is installed through `requirements.txt`, so no separate
+`spacy download` command is needed.
+
+Optional notebook kernel:
+
+```bash
 python -m ipykernel install --user --name banking-complaints-nlp --display-name "Python (banking complaints NLP)"
 ```
 
-In VS Code, select the notebook kernel named `Python (banking complaints NLP)`.
+In VS Code, select the notebook kernel named `Python (banking complaints NLP)` if you want
+to run the original notebook locally.
 
 ## Model Training
 
