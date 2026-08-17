@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Union
 
 import pandas as pd
 
@@ -30,7 +29,7 @@ PRODUCT_LABEL_NORMALIZATION = {
 }
 
 
-def load_complaints(path: Union[str, Path] = DATA_PATH) -> pd.DataFrame:
+def load_complaints(path: str | Path = DATA_PATH) -> pd.DataFrame:
     """Load the complaints CSV and validate the columns the model needs."""
     path = Path(path)
     if not path.exists():

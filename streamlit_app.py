@@ -18,11 +18,14 @@ from banking_complaints.config import (
     TEXT_COLUMN,
 )
 from banking_complaints.data import group_rare_classes, load_complaints, normalize_product_labels
+from banking_complaints.labels import friendly_label
 from banking_complaints.predict import DEFAULT_MODEL_PATH, predict_product
 
 MODEL_PATH = MODELS_DIR / "complaint_classifier.joblib"
 METRICS_PATH = REPORTS_DIR / "sklearn_metrics.json"
 PREDICTION_HISTORY_LIMIT = 10
+MCP_ENDPOINT = "http://localhost:8000/mcp"
+MCP_SERVER_COMMAND = "python -m banking_complaints.mcp_server"
 MODEL_HISTORY = [
     {
         "version": "Notebook baseline",
@@ -37,20 +40,9 @@ MODEL_HISTORY = [
     {
         "version": "spaCy lemmatized",
         "accuracy": 0.7890,
-        "model": "spaCy lemma + TF-IDF + LinearSVC",
+        "model": "spaCy lemma + TF-IDF + calibrated LinearSVC",
     },
 ]
-DISPLAY_LABELS = {
-    "Bank account / checking / savings": "Bank account issue",
-    "Consumer / vehicle loan": "Loan issue",
-    "Credit card / prepaid card": "Credit card issue",
-    "Credit reporting": "Credit report issue",
-    "Debt collection": "Debt collection issue",
-    "Money transfer / money service": "Money transfer issue",
-    "Mortgage": "Mortgage issue",
-    "Other": "Other financial issue",
-    "Student loan": "Student loan issue",
-}
 
 EXAMPLE_COMPLAINTS = {
     "Unexpected checking account fees": (
@@ -74,6 +66,30 @@ EXAMPLE_COMPLAINTS = {
         "keeps saying it is under review and will not return my money."
     ),
 }
+
+MCP_TOOLS = [
+    {
+        "name": "classify_complaint_tool",
+        "description": (
+            "Classifies a complaint narrative into the model's supported banking "
+            "product categories."
+        ),
+    },
+    {
+        "name": "get_model_metrics_tool",
+        "description": (
+            "Returns saved evaluation metrics so an agent can explain model performance."
+        ),
+    },
+    {
+        "name": "get_supported_categories_tool",
+        "description": "Lists the product categories currently supported by the classifier.",
+    },
+    {
+        "name": "get_category_examples_tool",
+        "description": "Provides example complaint language for a selected category.",
+    },
+]
 
 
 st.set_page_config(
@@ -257,10 +273,6 @@ def summary_metric(metrics: dict, average_name: str, metric_name: str) -> str:
     if isinstance(value, float):
         return f"{value:.3f}"
     return "n/a"
-
-
-def friendly_label(label: str) -> str:
-    return DISPLAY_LABELS.get(label, label)
 
 
 def render_html_card_grid(cards: list[dict], height: int = 150) -> None:
@@ -480,9 +492,9 @@ def record_prediction_event(text: str, prediction: dict, latency_ms: float) -> N
         "characters": len(text),
         "preview": text.strip().replace("\n", " ")[:120],
     }
-    st.session_state.prediction_events = (
-        [event] + st.session_state.prediction_events
-    )[:PREDICTION_HISTORY_LIMIT]
+    st.session_state.prediction_events = ([event] + st.session_state.prediction_events)[
+        :PREDICTION_HISTORY_LIMIT
+    ]
     st.session_state.latest_prediction = {
         "text": text,
         "prediction": prediction,
@@ -536,7 +548,13 @@ def render_sidebar(metrics: dict) -> str:
         st.caption("Classifier workspace")
         page = st.radio(
             "Navigation",
-            ["Prediction Lab", "Model Performance", "Training Data", "Sample Predictions"],
+            [
+                "Prediction Lab",
+                "Model Performance",
+                "Training Data",
+                "Sample Predictions",
+                "MCP / AI Agent Tools",
+            ],
             label_visibility="collapsed",
         )
         st.divider()
@@ -547,6 +565,187 @@ def render_sidebar(metrics: dict) -> str:
             st.caption(f"Last response: {last_event['latency_ms']:.0f} ms")
 
     return page
+
+
+def render_mcp_tools_view() -> None:
+    render_section_intro(
+        "MCP / AI Agent Tools",
+        "Connect AI assistants and agent runtimes to this classifier through the local MCP server.",
+    )
+
+    render_html_card_grid(
+        [
+            {
+                "label": "Integration",
+                "value": "MCP",
+                "note": "Model Context Protocol",
+                "tone": "blue",
+            },
+            {
+                "label": "Endpoint",
+                "value": MCP_ENDPOINT,
+                "note": "Local server URL",
+                "tone": "green",
+            },
+            {
+                "label": "Tools",
+                "value": len(MCP_TOOLS),
+                "note": "Available to agents",
+                "tone": "amber",
+            },
+            {
+                "label": "UI Mode",
+                "value": "Status",
+                "note": "Integration help, no chat",
+                "tone": "slate",
+            },
+        ],
+        height=172,
+    )
+
+    components.html(
+        f"""
+        <style>
+            html {{
+                background: #f8fafc;
+            }}
+            body {{
+                margin: 0;
+                background: #f8fafc;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                color: #0f172a;
+            }}
+            .mcp-shell {{
+                display: grid;
+                grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+                gap: 14px;
+            }}
+            .mcp-panel {{
+                box-sizing: border-box;
+                border: 1px solid #d8e0ea;
+                border-radius: 8px;
+                background: #ffffff;
+                padding: 18px;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+            }}
+            .mcp-kicker {{
+                font-size: 12px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #2563eb;
+            }}
+            .mcp-title {{
+                margin-top: 7px;
+                font-size: 22px;
+                line-height: 1.15;
+                font-weight: 820;
+                color: #0f172a;
+            }}
+            .mcp-text {{
+                margin-top: 10px;
+                color: #475569;
+                font-size: 14px;
+                line-height: 1.5;
+            }}
+            .mcp-list {{
+                display: grid;
+                gap: 10px;
+                margin-top: 14px;
+            }}
+            .mcp-tool {{
+                border: 1px solid #e2e8f0;
+                border-left: 4px solid #2563eb;
+                border-radius: 8px;
+                background: #f8fafc;
+                padding: 12px 13px;
+            }}
+            .mcp-tool-name {{
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-size: 13px;
+                font-weight: 760;
+                color: #0f172a;
+                overflow-wrap: anywhere;
+            }}
+            .mcp-tool-desc {{
+                margin-top: 5px;
+                font-size: 13px;
+                line-height: 1.38;
+                color: #64748b;
+            }}
+            .mcp-code-block {{
+                margin-top: 12px;
+                border-radius: 8px;
+                border: 1px solid #cbd5e1;
+                background: #0f172a;
+                color: #e2e8f0;
+                padding: 12px 13px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-size: 13px;
+                line-height: 1.45;
+                overflow-wrap: anywhere;
+            }}
+            .mcp-label {{
+                margin-top: 16px;
+                font-size: 12px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #64748b;
+            }}
+            .mcp-note {{
+                margin-top: 14px;
+                border-radius: 8px;
+                border: 1px solid #bfdbfe;
+                background: #eff6ff;
+                padding: 12px 13px;
+                color: #1e3a8a;
+                font-size: 13px;
+                line-height: 1.45;
+            }}
+            @media (max-width: 820px) {{
+                .mcp-shell {{ grid-template-columns: 1fr; }}
+            }}
+        </style>
+        <div class="mcp-shell">
+            <div class="mcp-panel">
+                <div class="mcp-kicker">Agent integration</div>
+                <div class="mcp-title">Expose the classifier as tools for AI assistants</div>
+                <div class="mcp-text">
+                    MCP lets compatible AI assistants and agent runtimes call this project's
+                    classifier, metrics, category list, and example lookup through a local tool
+                    server. This page is a setup and status reference for that integration.
+                </div>
+                <div class="mcp-note">
+                    Start the MCP server locally, then configure your agent client to connect to
+                    the endpoint shown here.
+                </div>
+                <div class="mcp-label">Local endpoint</div>
+                <div class="mcp-code-block">{escape(MCP_ENDPOINT)}</div>
+                <div class="mcp-label">Server command</div>
+                <div class="mcp-code-block">{escape(MCP_SERVER_COMMAND)}</div>
+            </div>
+            <div class="mcp-panel">
+                <div class="mcp-kicker">Available tools</div>
+                <div class="mcp-title">Current MCP surface</div>
+                <div class="mcp-list">
+                    {
+            "".join(
+                f'''
+                        <div class="mcp-tool">
+                            <div class="mcp-tool-name">{escape(tool["name"])}</div>
+                            <div class="mcp-tool-desc">{escape(tool["description"])}</div>
+                        </div>
+                        '''
+                for tool in MCP_TOOLS
+            )
+        }
+                </div>
+            </div>
+        </div>
+        """,
+        height=548,
+    )
 
 
 def render_prediction_history() -> None:
@@ -614,7 +813,10 @@ def render_data_overview(df: pd.DataFrame) -> None:
     with right:
         st.caption("Normalized model labels")
         grouped_counts = (
-            df[GROUPED_TARGET_COLUMN].value_counts().rename_axis("product").reset_index(name="count")
+            df[GROUPED_TARGET_COLUMN]
+            .value_counts()
+            .rename_axis("product")
+            .reset_index(name="count")
         )
         st.bar_chart(grouped_counts, x="product", y="count", height=360)
 
@@ -635,7 +837,7 @@ def render_model_section(metrics: dict) -> None:
             },
             {
                 "label": "Model",
-                "value": "spaCy TF-IDF SVC",
+                "value": "Calibrated SVC",
                 "note": "Saved artifact type",
                 "tone": "blue",
             },
@@ -663,8 +865,7 @@ def render_model_section(metrics: dict) -> None:
     report_df = class_report_frame(metrics)
     if report_df.empty:
         st.info(
-            "Train the model to generate class metrics: "
-            "python -m banking_complaints.train_sklearn"
+            "Train the model to generate class metrics: python -m banking_complaints.train_sklearn"
         )
         return
 
@@ -709,8 +910,7 @@ def render_classifier(df: pd.DataFrame) -> None:
         random_state=7,
     )
     training_options = {
-        f"Training row: {text[:100]}": text
-        for text in training_examples[TEXT_COLUMN].tolist()
+        f"Training row: {text[:100]}": text for text in training_examples[TEXT_COLUMN].tolist()
     }
     example_options = {
         "Write my own complaint": (
@@ -865,8 +1065,10 @@ def main() -> None:
         render_model_section(metrics)
     elif page == "Training Data":
         render_data_overview(df)
-    else:
+    elif page == "Sample Predictions":
         render_training_predictions(df)
+    else:
+        render_mcp_tools_view()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: |
+          uv venv --python 3.11
+          uv pip install -r requirements-ci.txt -e .
+
+      - name: Ruff lint
+        run: uv run ruff check src tests streamlit_app.py
+
+      - name: Ruff format check
+        run: uv run ruff format --check src tests streamlit_app.py
+
+      - name: Pytest
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+        run: uv run pytest -q

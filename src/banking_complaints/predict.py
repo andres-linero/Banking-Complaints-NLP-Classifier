@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Union
 
 import joblib
 
@@ -9,7 +8,7 @@ from banking_complaints.preprocessing import sentiment_label
 DEFAULT_MODEL_PATH = MODELS_DIR / "complaint_classifier.joblib"
 
 
-def predict_product(text: str, model_path: Union[str, Path] = DEFAULT_MODEL_PATH) -> dict:
+def predict_product(text: str, model_path: str | Path = DEFAULT_MODEL_PATH) -> dict:
     model_path = Path(model_path)
     if not model_path.exists():
         raise FileNotFoundError(

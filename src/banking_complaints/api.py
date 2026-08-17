@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
@@ -15,7 +13,7 @@ class ComplaintRequest(BaseModel):
 class ComplaintPrediction(BaseModel):
     product: str
     sentiment: str
-    confidence: Optional[float] = None
+    confidence: float | None = None
 
 
 @app.get("/health")
