@@ -3,12 +3,7 @@ import inspect
 import json
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Union
-
-import numpy as np
-import torch
-from sklearn.metrics import accuracy_score, classification_report, f1_score
-from sklearn.model_selection import train_test_split
+from typing import Any
 
 from banking_complaints.config import (
     DATA_PATH,
@@ -16,12 +11,8 @@ from banking_complaints.config import (
     MODELS_DIR,
     NORMALIZED_TARGET_COLUMN,
     REPORTS_DIR,
+    TARGET_COLUMN,
     TEXT_COLUMN,
-)
-from banking_complaints.data import (
-    group_rare_classes,
-    load_complaints,
-    normalize_product_labels,
 )
 
 DEFAULT_MODEL_NAME = "distilbert-base-uncased"
@@ -44,7 +35,18 @@ def encode_labels(labels: Iterable[Any]) -> tuple[list[int], dict[str, Any]]:
     return [label2id[label] for label in raw_labels], metadata
 
 
-class ComplaintTextDataset(torch.utils.data.Dataset):
+def _load_torch():
+    try:
+        import torch
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "BERT training requires optional dependencies. "
+            "Install them with `python -m pip install -r requirements-bert.txt`."
+        ) from exc
+    return torch
+
+
+class ComplaintTextDataset:
     def __init__(
         self,
         texts: Iterable[str],
@@ -63,11 +65,9 @@ class ComplaintTextDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
-        item = {
-            key: torch.tensor(values[index])
-            for key, values in self.encodings.items()
-        }
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        torch = _load_torch()
+        item = {key: torch.tensor(values[index]) for key, values in self.encodings.items()}
         item["labels"] = torch.tensor(self.labels[index], dtype=torch.long)
         return item
 
@@ -83,6 +83,9 @@ def _training_arguments_kwargs(**kwargs: Any) -> dict[str, Any]:
 
 
 def _compute_metrics(eval_pred: Any) -> dict[str, float]:
+    import numpy as np
+    from sklearn.metrics import accuracy_score, f1_score
+
     logits, labels = eval_pred
     predictions = np.argmax(logits, axis=-1)
     return {
@@ -92,17 +95,29 @@ def _compute_metrics(eval_pred: Any) -> dict[str, float]:
 
 
 def train(
-    data_path: Union[str, Path] = DATA_PATH,
+    data_path: str | Path = DATA_PATH,
     model_name: str = DEFAULT_MODEL_NAME,
-    output_dir: Union[str, Path] = DEFAULT_OUTPUT_DIR,
-    report_path: Union[str, Path] = DEFAULT_REPORT_PATH,
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR,
+    report_path: str | Path = DEFAULT_REPORT_PATH,
     epochs: int = 2,
     max_length: int = 256,
     batch_size: int = 8,
     min_class_count: int = 50,
     test_size: float = 0.2,
     random_state: int = 42,
+    normalize_labels: bool = True,
 ) -> dict[str, Any]:
+    import numpy as np
+    from sklearn.metrics import classification_report
+    from sklearn.model_selection import train_test_split
+
+    from banking_complaints.data import (
+        group_rare_classes,
+        load_complaints,
+        normalize_product_labels,
+    )
+
+    _load_torch()
     from transformers import (
         AutoModelForSequenceClassification,
         AutoTokenizer,
@@ -111,11 +126,15 @@ def train(
     )
 
     df = load_complaints(data_path)
-    df = normalize_product_labels(df)
+    if normalize_labels:
+        df = normalize_product_labels(df)
+        target_column = NORMALIZED_TARGET_COLUMN
+    else:
+        target_column = TARGET_COLUMN
     df = group_rare_classes(
         df,
         min_count=min_class_count,
-        target_column=NORMALIZED_TARGET_COLUMN,
+        target_column=target_column,
         output_column=GROUPED_TARGET_COLUMN,
     )
     labels, label_metadata = encode_labels(df[GROUPED_TARGET_COLUMN])

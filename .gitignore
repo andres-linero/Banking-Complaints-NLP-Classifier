@@ -2,6 +2,7 @@
 .DS_Store
 .vscode/
 .idea/
+.mcp.json
 
 # Python environments
 .venv/
@@ -38,6 +39,7 @@ models/*.safetensors
 models/bert*/
 
 # Generated reports / experiment output
+reports/figures/
 reports/*.csv
 reports/*.json
 reports/*.txt

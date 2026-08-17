@@ -1,9 +1,9 @@
 import argparse
 import json
 from pathlib import Path
-from typing import Union
 
 import joblib
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
@@ -20,6 +20,7 @@ from banking_complaints.config import (
 )
 from banking_complaints.data import group_rare_classes, load_complaints, normalize_product_labels
 from banking_complaints.preprocessing import SpacyLemmaTransformer
+from banking_complaints.visualize import save_training_figures
 
 
 def build_pipeline() -> Pipeline:
@@ -36,15 +37,22 @@ def build_pipeline() -> Pipeline:
                     stop_words="english",
                 ),
             ),
-            ("model", LinearSVC(class_weight="balanced", C=1.0, random_state=42)),
+            (
+                "model",
+                CalibratedClassifierCV(
+                    LinearSVC(class_weight="balanced", C=1.0, random_state=42),
+                    method="sigmoid",
+                    cv=5,
+                ),
+            ),
         ]
     )
 
 
 def train(
-    data_path: Union[str, Path] = DATA_PATH,
-    model_path: Union[str, Path] = MODELS_DIR / "complaint_classifier.joblib",
-    report_path: Union[str, Path] = REPORTS_DIR / "sklearn_metrics.json",
+    data_path: str | Path = DATA_PATH,
+    model_path: str | Path = MODELS_DIR / "complaint_classifier.joblib",
+    report_path: str | Path = REPORTS_DIR / "sklearn_metrics.json",
     min_class_count: int = 50,
     test_size: float = 0.2,
     random_state: int = 42,
@@ -87,6 +95,15 @@ def train(
     report_path = Path(report_path)
     model_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.parent.mkdir(parents=True, exist_ok=True)
+
+    metrics["figures"] = save_training_figures(
+        labels=df[GROUPED_TARGET_COLUMN],
+        y_test=y_test,
+        predictions=predictions,
+        classification_report=metrics["classification_report"],
+        figures_dir=report_path.parent / "figures",
+    )
+
     joblib.dump(pipeline, model_path)
     report_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     return metrics

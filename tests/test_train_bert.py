@@ -1,3 +1,7 @@
+import os
+
+import pytest
+
 from banking_complaints.train_bert import ComplaintTextDataset, encode_labels
 
 
@@ -28,6 +32,10 @@ def test_encode_labels_maps_business_classes() -> None:
     }
 
 
+@pytest.mark.skipif(
+    os.getenv("RUN_BERT_TENSOR_TESTS") != "1",
+    reason="Set RUN_BERT_TENSOR_TESTS=1 after installing requirements-bert.txt",
+)
 def test_complaint_text_dataset_builds_tokenized_items() -> None:
     dataset = ComplaintTextDataset(
         texts=["fee dispute", "missing payment"],

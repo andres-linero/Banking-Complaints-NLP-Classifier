@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Official MCP Python SDK. Requires Python 3.10+.
+mcp[cli]>=1.27,<2.0
