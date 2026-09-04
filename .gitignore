@@ -27,9 +27,6 @@ dist/
 coverage.xml
 htmlcov/
 
-# Generated NLP assets
-nltk_data/
-
 # Trained model artifacts
 models/*.joblib
 models/*.pkl
