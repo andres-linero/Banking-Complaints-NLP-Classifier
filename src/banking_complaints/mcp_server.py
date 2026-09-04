@@ -150,7 +150,7 @@ def create_mcp_server():
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             "MCP support requires Python 3.10+ and the official MCP SDK. "
-            "Install it with `python -m pip install -r requirements-mcp.txt`."
+            "Install it with `uv sync --group mcp`."
         ) from exc
 
     mcp = FastMCP(

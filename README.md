@@ -134,18 +134,27 @@ This project uses `uv` for a reproducible local setup. Python 3.11 is the recomm
 runtime for the app, tests, and CI.
 
 ```bash
-uv venv --python 3.11
-source .venv/bin/activate
-uv pip install -r requirements-dev.txt -e .
+uv sync
 ```
 
-The spaCy English model is installed through `requirements.txt`, so no separate
+This creates `.venv`, installs the pinned dependencies from `uv.lock` (including the `dev`
+group with pytest, ruff, and Jupyter), and installs the package in editable mode. Run any
+command inside the environment with `uv run`, for example `uv run pytest`.
+
+The spaCy English model is declared as a project dependency, so no separate
 `spacy download` command is needed.
+
+Optional dependency groups:
+
+```bash
+uv sync --group bert   # PyTorch, Transformers, and friends for BERT fine-tuning
+uv sync --group mcp    # official MCP Python SDK for the MCP server
+```
 
 Optional notebook kernel:
 
 ```bash
-python -m ipykernel install --user --name banking-complaints-nlp --display-name "Python (banking complaints NLP)"
+uv run python -m ipykernel install --user --name banking-complaints-nlp --display-name "Python (banking complaints NLP)"
 ```
 
 In VS Code, select the notebook kernel named `Python (banking complaints NLP)` if you want
@@ -173,7 +182,7 @@ These artifacts are ignored by git so the repository stays lightweight.
 The project also includes an optional BERT fine-tuning path for comparison:
 
 ```bash
-python -m pip install -r requirements-bert.txt
+uv sync --group bert
 ```
 
 ```bash
@@ -230,7 +239,7 @@ The first MCP tools are:
 The official MCP Python SDK requires Python 3.10 or newer. Install the optional MCP environment:
 
 ```bash
-python -m pip install -r requirements-mcp.txt
+uv sync --group mcp
 ```
 
 Run the server:
@@ -268,8 +277,8 @@ CI runs the same checks with `uv` on Python 3.11.
   credentials, or unredacted personal data.
 - Trained models, reports, NLTK downloads, caches, and local virtual environments are generated
   artifacts and are ignored by git.
-- BERT dependencies are intentionally optional in `requirements-bert.txt` because PyTorch and
-  Transformers are large and not needed for the default demo model.
+- BERT dependencies are intentionally kept in the optional `bert` dependency group because
+  PyTorch and Transformers are large and not needed for the default demo model.
 - The MCP server binds to localhost for local agent integration; do not expose it publicly without
   adding authentication and deployment hardening.
 
@@ -284,9 +293,8 @@ nltk_data/                   local NLTK assets, ignored by git
 streamlit_app.py             dashboard UI
 NLP_Project_Andres_RL.ipynb  original exploration notebook
 complaints_banking_2023.csv  local dataset
-requirements-ci.txt          CI lint/test dependencies
-requirements-mcp.txt         optional MCP server dependencies
-requirements-bert.txt        optional BERT fine-tuning dependencies
+pyproject.toml               project metadata and dependency groups (dev, bert, mcp)
+uv.lock                      pinned dependency lockfile used by uv sync
 .github/workflows/ci.yml     GitHub Actions lint/test workflow
 ```
 

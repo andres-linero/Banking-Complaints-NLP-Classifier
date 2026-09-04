@@ -34,7 +34,7 @@ def test_encode_labels_maps_business_classes() -> None:
 
 @pytest.mark.skipif(
     os.getenv("RUN_BERT_TENSOR_TESTS") != "1",
-    reason="Set RUN_BERT_TENSOR_TESTS=1 after installing requirements-bert.txt",
+    reason="Set RUN_BERT_TENSOR_TESTS=1 after running uv sync --group bert",
 )
 def test_complaint_text_dataset_builds_tokenized_items() -> None:
     dataset = ComplaintTextDataset(

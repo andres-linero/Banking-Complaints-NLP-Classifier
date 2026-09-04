@@ -41,7 +41,7 @@ def _load_torch():
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             "BERT training requires optional dependencies. "
-            "Install them with `python -m pip install -r requirements-bert.txt`."
+            "Install them with `uv sync --group bert`."
         ) from exc
     return torch
 

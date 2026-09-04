@@ -1,8 +1,0 @@
--r requirements.txt
-
-# Optional, heavier dependencies for BERT fine-tuning.
-torch>=2.2
-transformers>=4.40,<5.0
-datasets>=2.18,<4.0
-accelerate>=0.30
-evaluate>=0.4,<1.0
