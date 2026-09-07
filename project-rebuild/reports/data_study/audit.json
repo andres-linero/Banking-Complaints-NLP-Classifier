@@ -1,0 +1,110 @@
+{
+  "shape": {
+    "rows": 7011,
+    "columns": 8
+  },
+  "columns": [
+    "Complaint ID",
+    "Date Received",
+    "Banking Product",
+    "Issue ID",
+    "Complaint Description",
+    "State",
+    "ZIP",
+    "Bank Response"
+  ],
+  "nulls": {
+    "Complaint ID": 0,
+    "Date Received": 0,
+    "Banking Product": 0,
+    "Issue ID": 0,
+    "Complaint Description": 0,
+    "State": 27,
+    "ZIP": 30,
+    "Bank Response": 0
+  },
+  "unique_values": {
+    "Complaint ID": 7011,
+    "Date Received": 288,
+    "Banking Product": 17,
+    "Issue ID": 130,
+    "Complaint Description": 6984,
+    "State": 55,
+    "ZIP": 3442,
+    "Bank Response": 6
+  },
+  "duplicates": {
+    "full_rows": 0,
+    "complaint_id": 0,
+    "description": 27
+  },
+  "date_range": {
+    "min": "2023-01-01",
+    "max": "2023-10-21",
+    "unparsed": 0
+  },
+  "labels": {
+    "Checking or savings account": 1655,
+    "Credit card or prepaid card": 1233,
+    "Mortgage": 848,
+    "Debt collection": 748,
+    "Credit reporting, credit repair services, or other personal consumer reports": 559,
+    "Credit reporting": 550,
+    "Money transfer, virtual currency, or money service": 411,
+    "Credit card": 359,
+    "Bank account or service": 256,
+    "Student loan": 201,
+    "Consumer Loan": 83,
+    "Vehicle loan or lease": 35,
+    "Payday loan": 30,
+    "Prepaid card": 17,
+    "Payday loan, title loan, or personal loan": 14,
+    "Money transfers": 11,
+    "Other financial service": 1
+  },
+  "responses": {
+    "Closed with explanation": 4897,
+    "Closed with monetary relief": 1251,
+    "Closed with non-monetary relief": 769,
+    "Closed": 51,
+    "Untimely response": 42,
+    "In progress": 1
+  },
+  "text": {
+    "words": {
+      "count": 7011.0,
+      "mean": 217.75780915703893,
+      "std": 233.45041559627904,
+      "min": 2.0,
+      "1%": 12.0,
+      "5%": 27.0,
+      "25%": 81.0,
+      "50%": 148.0,
+      "75%": 272.0,
+      "95%": 644.0,
+      "99%": 1097.599999999995,
+      "max": 4687.0
+    },
+    "chars": {
+      "count": 7011.0,
+      "mean": 1181.402652973898,
+      "std": 1288.1494073367662,
+      "min": 14.0,
+      "1%": 68.10000000000001,
+      "5%": 148.0,
+      "25%": 431.0,
+      "50%": 796.0,
+      "75%": 1474.0,
+      "95%": 3556.5,
+      "99%": 5965.399999999976,
+      "max": 28705.0
+    },
+    "under_10_words": 41,
+    "over_512_words": 591,
+    "uppercase_only": 74,
+    "non_ascii": 0,
+    "with_redaction": 6168,
+    "redaction_tokens_per_row": 13.419911567536728,
+    "with_money_mask": 2717
+  }
+}

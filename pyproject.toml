@@ -16,6 +16,8 @@ dependencies = [
     "uvicorn[standard]>=0.29,<1.0",
     "pydantic>=2.7,<3.0",
     "streamlit>=1.35,<2.0",
+    "pyyaml>=6.0,<7.0",
+    "pyarrow>=15.0",
 ]
 
 [dependency-groups]
@@ -46,15 +48,16 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "project-rebuild"]
+include = ["banking_complaints*", "complaints*"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
+pythonpath = ["src", "project-rebuild"]
+testpaths = ["tests", "project-rebuild/tests"]
 
 [tool.ruff]
 line-length = 100
-src = ["src", "tests"]
+src = ["src", "tests", "project-rebuild"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

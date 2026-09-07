@@ -1,0 +1,6 @@
+# Shared runtime paths for complaints.data_study and complaints.clean.
+# Relative paths resolve against project-rebuild, regardless of the working directory.
+raw_data_path: ../complaints_banking_2023.csv
+labels_config_path: configs/labels.yaml
+processed_data_path: data/processed/clean.parquet
+reports_dir: reports

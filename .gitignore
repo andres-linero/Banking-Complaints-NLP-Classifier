@@ -47,3 +47,6 @@ wandb/
 *.sqlite
 *.sqlite3
 *.log
+
+# Rebuild: derived data, regenerate with uv run python -m complaints.clean
+project-rebuild/data/processed/

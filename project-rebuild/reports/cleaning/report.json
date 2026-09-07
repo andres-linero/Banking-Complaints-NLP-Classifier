@@ -1,0 +1,19 @@
+{
+  "steps": {
+    "raw_rows": 7011,
+    "after_drop_labels": 7010,
+    "after_drop_null_text": 7010,
+    "after_drop_short": 6969,
+    "after_drop_duplicates": 6939
+  },
+  "removed": 72,
+  "classes": {
+    "Bank account": 2314,
+    "Credit card": 1600,
+    "Credit reporting": 1079,
+    "Mortgage": 846,
+    "Debt collection": 737,
+    "Student loan": 201,
+    "Loan": 162
+  }
+}
