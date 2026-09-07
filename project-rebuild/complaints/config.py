@@ -18,6 +18,8 @@ class RuntimeConfig:
     raw_data_path: Path
     labels_config_path: Path
     processed_data_path: Path
+    train_data_path: Path
+    test_data_path: Path
     reports_dir: Path
 
 
@@ -41,6 +43,8 @@ _DEFAULT_RUNTIME = load_runtime_config()
 RAW_DATA_PATH = _DEFAULT_RUNTIME.raw_data_path
 LABELS_CONFIG_PATH = _DEFAULT_RUNTIME.labels_config_path
 PROCESSED_DATA_PATH = _DEFAULT_RUNTIME.processed_data_path
+TRAIN_DATA_PATH = _DEFAULT_RUNTIME.train_data_path
+TEST_DATA_PATH = _DEFAULT_RUNTIME.test_data_path
 REPORTS_DIR = _DEFAULT_RUNTIME.reports_dir
 
 

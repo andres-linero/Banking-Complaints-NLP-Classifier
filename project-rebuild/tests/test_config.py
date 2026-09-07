@@ -42,6 +42,8 @@ def test_both_stages_use_runtime_config_and_cli_override(tmp_path, monkeypatch):
                 "raw_data_path": str(tmp_path / "missing.csv"),
                 "labels_config_path": str(labels_path),
                 "processed_data_path": str(output),
+                "train_data_path": str(tmp_path / "train.parquet"),
+                "test_data_path": str(tmp_path / "test.parquet"),
                 "reports_dir": str(reports),
             }
         )

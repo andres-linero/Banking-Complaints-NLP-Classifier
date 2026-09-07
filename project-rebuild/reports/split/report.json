@@ -1,0 +1,38 @@
+{
+  "test_size": 0.2,
+  "seed": 42,
+  "rows": {
+    "train": 5551,
+    "test": 1388
+  },
+  "classes": {
+    "Bank account": {
+      "train": 1851,
+      "test": 463
+    },
+    "Credit card": {
+      "train": 1280,
+      "test": 320
+    },
+    "Credit reporting": {
+      "train": 863,
+      "test": 216
+    },
+    "Mortgage": {
+      "train": 677,
+      "test": 169
+    },
+    "Debt collection": {
+      "train": 589,
+      "test": 148
+    },
+    "Student loan": {
+      "train": 161,
+      "test": 40
+    },
+    "Loan": {
+      "train": 130,
+      "test": 32
+    }
+  }
+}

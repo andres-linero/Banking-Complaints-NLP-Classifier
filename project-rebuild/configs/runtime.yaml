@@ -1,6 +1,8 @@
-# Shared runtime paths for complaints.data_study and complaints.clean.
+# Shared runtime paths for the rebuild stages: data_study, clean, split.
 # Relative paths resolve against project-rebuild, regardless of the working directory.
 raw_data_path: ../complaints_banking_2023.csv
 labels_config_path: configs/labels.yaml
 processed_data_path: data/processed/clean.parquet
+train_data_path: data/processed/train.parquet
+test_data_path: data/processed/test.parquet
 reports_dir: reports
