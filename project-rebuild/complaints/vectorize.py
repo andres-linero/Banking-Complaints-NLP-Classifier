@@ -1,4 +1,4 @@
-"""Text to features: the conversion step that lives inside the model.
+"""Text vectorization: turn complaint text into TF-IDF vectors inside the model.
 
 The vectorizer is fitted on the training texts only and then saved as the
 first step of the model pipeline, so at prediction time raw text goes in and

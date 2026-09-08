@@ -1,6 +1,6 @@
 import pytest
 
-from complaints.features import (
+from complaints.vectorize import (
     BASELINE_CONFIG_PATH,
     build_vectorizer,
     describe_features,
