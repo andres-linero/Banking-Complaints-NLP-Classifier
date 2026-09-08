@@ -29,25 +29,11 @@ on the old package until the serve stage lands. See [Migration](#migration).
 
 ## How it works
 
-The data is cleaned and split once. After that, one model is fitted on the train rows and scored
-on the test rows exactly once.
+The data path runs once and freezes a train set and a test set. The model path fits one model on
+the train rows, scores it on the test rows exactly once, and serves it.
 
-```mermaid
-flowchart LR
-    classDef file fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#0f172a
-    classDef step fill:#dcfce7,stroke:#059669,stroke-width:1.5px,color:#0f172a
-    classDef out fill:#ede9fe,stroke:#7c3aed,stroke-width:1.5px,color:#0f172a
+<img src="docs/pipeline.svg" alt="Training map: data path from the raw CSV through ingest, clean, and split; model path through vectorize, classifier, evaluate, and serve; every run tracked in MLflow" width="100%">
 
-    TR["train.parquet<br/>5,551 rows"] --> TRAIN["Train<br/>TF-IDF + logistic regression"]
-    TRAIN --> MODEL["baseline.joblib"]
-    MODEL --> EVAL["Evaluate<br/>once, on rows never seen"]
-    TE["test.parquet<br/>1,388 rows"] --> EVAL
-    EVAL --> REP["Accuracy 0.825 · macro F1 0.806<br/>confusion matrix, threshold, worst mistakes"]
-
-    class TR,TE file
-    class TRAIN,EVAL step
-    class MODEL,REP out
-```
 
 **How the model is trained**
 
