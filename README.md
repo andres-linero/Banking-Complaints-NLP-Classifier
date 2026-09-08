@@ -29,27 +29,8 @@ on the old package until the serve stage lands. See [Migration](#migration).
 
 ## How it works
 
-Two paths. The data path runs once and freezes a train set and a test set. The model path reads
-the train set, fits one model, and scores it on the test set exactly once.
-
-**Data path, runs once**
-
-```mermaid
-flowchart LR
-    classDef file fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#0f172a
-    classDef step fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#0f172a
-
-    CSV["Raw CSV<br/>7,011 rows"] --> ING["1 · Ingest<br/>load and type"]
-    ING --> CLEAN["2 · Clean<br/>17 labels to 7 classes"]
-    CLEAN --> SPLIT["3 · Split<br/>frozen 80 / 20"]
-    SPLIT --> TR["train.parquet<br/>5,551 rows"]
-    SPLIT --> TE["test.parquet<br/>1,388 rows"]
-
-    class CSV,TR,TE file
-    class ING,CLEAN,SPLIT step
-```
-
-**Model path, the one model that ships**
+The data is cleaned and split once. After that, one model is fitted on the train rows and scored
+on the test rows exactly once.
 
 ```mermaid
 flowchart LR
@@ -57,11 +38,11 @@ flowchart LR
     classDef step fill:#dcfce7,stroke:#059669,stroke-width:1.5px,color:#0f172a
     classDef out fill:#ede9fe,stroke:#7c3aed,stroke-width:1.5px,color:#0f172a
 
-    TR["train.parquet"] --> TRAIN["4 · Train<br/>TF-IDF + logistic regression"]
-    TRAIN --> MODEL["models/baseline.joblib"]
-    MODEL --> EVAL["5 · Evaluate<br/>score test.parquet once"]
-    TE["test.parquet"] --> EVAL
-    EVAL --> REP["reports/evaluate/<br/>metrics, figures, worst mistakes"]
+    TR["train.parquet<br/>5,551 rows"] --> TRAIN["Train<br/>TF-IDF + logistic regression"]
+    TRAIN --> MODEL["baseline.joblib"]
+    MODEL --> EVAL["Evaluate<br/>once, on rows never seen"]
+    TE["test.parquet<br/>1,388 rows"] --> EVAL
+    EVAL --> REP["Accuracy 0.825 · macro F1 0.806<br/>confusion matrix, threshold, worst mistakes"]
 
     class TR,TE file
     class TRAIN,EVAL step
@@ -71,16 +52,14 @@ flowchart LR
 Every training run is logged to a local MLflow folder with its config and scores, so a second
 model can be trained on the same rows and compared in one table.
 
-A few decisions worth knowing:
+Three rules the pipeline enforces:
 
-- **The test set is read once.** Split is a stage of its own, and the Complaint ID to train or test
-  assignment is written to disk. Every model is scored on identical rows.
-- **Cleaning is not modelling.** The clean stage collapses anonymised tokens and money masks, drops
-  very short and duplicate complaints, and maps labels. Lowercasing, stop words, and lemmatisation
-  are model choices and live in the model config.
-- **Labels come from a YAML file.** The source CSV mixes two taxonomy versions. `labels.yaml` maps
-  17 raw labels onto 7 classes and fails loudly if a raw label is missing.
-- **Logistic regression gives real probabilities.** That is what the human-review threshold needs.
+- **The test set is read once.** The split is frozen to disk with the Complaint ID assignment, so
+  every model is scored on identical rows.
+- **Cleaning is not modelling.** Cleaning collapses anonymised tokens, drops short and duplicate
+  texts, and maps 17 raw labels onto 7 classes from `labels.yaml`. Lowercasing and n-grams are
+  model choices in `baseline.yaml`.
+- **The classifier outputs real probabilities.** The human-review threshold depends on them.
 
 ## Results
 
@@ -93,16 +72,6 @@ Baseline model, scored once on the 1,388 complaints it never saw.
 | Human-review threshold | 0.55 | Routes 71% of complaints automatically at 90.7% accuracy |
 | Weakest class | Loan, F1 0.68 | 32 test rows, spills into four other classes |
 
-| Class | Precision | Recall | F1 | Test rows |
-| --- | --- | --- | --- | --- |
-| Bank account | 0.86 | 0.90 | 0.88 | 463 |
-| Credit card | 0.79 | 0.78 | 0.79 | 320 |
-| Credit reporting | 0.77 | 0.75 | 0.76 | 216 |
-| Mortgage | 0.88 | 0.91 | 0.89 | 169 |
-| Debt collection | 0.77 | 0.74 | 0.75 | 148 |
-| Student loan | 0.97 | 0.83 | 0.89 | 40 |
-| Loan | 0.74 | 0.63 | 0.68 | 32 |
-
 <p>
   <img src="project-rebuild/reports/evaluate/figures/confusion_matrix.png" width="48%" alt="Confusion matrix on the test set">
   <img src="project-rebuild/reports/evaluate/figures/threshold_curve.png" width="48%" alt="Coverage and routed accuracy against the confidence threshold">
@@ -112,8 +81,8 @@ Rows of the confusion matrix are the true class. The two biggest leaks are credi
 bank account, and credit reporting read as credit card. The threshold curve shows the trade: raise
 the cutoff and fewer complaints route automatically, but the ones that do are right more often.
 
-The full numbers are in `project-rebuild/reports/evaluate/baseline.json`, and the most confident
-wrong predictions are in `worst_mistakes.csv` next to it.
+Per-class scores, the full confusion matrix, and the most confident wrong predictions are in
+`project-rebuild/reports/evaluate/`.
 
 ## Old model vs new model
 
@@ -145,13 +114,8 @@ Each stage is one module under `project-rebuild/complaints/`, runnable on its ow
 Two more modules support the stages. `config.py` resolves paths and loads the label map, and
 `vectorize.py` builds the TF-IDF step from `configs/baseline.yaml`.
 
-Configuration lives in three YAML files under `project-rebuild/configs/`:
-
-| File | Holds |
-| --- | --- |
-| `runtime.yaml` | Every input and output path, relative to `project-rebuild` |
-| `labels.yaml` | The 17 raw labels to 7 classes map, the drop list, and the minimum word count |
-| `baseline.yaml` | Every modelling choice: n-grams, vocabulary size, regularisation, class weights |
+Three YAML files under `project-rebuild/configs/` hold every setting: `runtime.yaml` for paths,
+`labels.yaml` for the label map, and `baseline.yaml` for every modelling choice.
 
 ## Quick start
 
@@ -181,20 +145,6 @@ cd project-rebuild && uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlfl
 
 The rebuild replaces the old package `src/banking_complaints` one piece at a time. The training
 side is done. The serving side is next.
-
-```mermaid
-flowchart LR
-    classDef done fill:#dcfce7,stroke:#059669,stroke-width:1.5px,color:#0f172a
-    classDef next fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#0f172a
-    classDef old fill:#f1f5f9,stroke:#64748b,stroke-width:1.5px,stroke-dasharray:6 4,color:#475569
-
-    NEW["New model<br/>models/baseline.joblib"] --> PRED["6 · Serve<br/>predictor: class, confidence, needs review"]
-    PRED --> SURF["Dashboard · API · MCP<br/>still on the old package"]
-
-    class NEW done
-    class PRED next
-    class SURF old
-```
 
 | Step | State |
 | --- | --- |
