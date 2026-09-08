@@ -21,6 +21,8 @@ class RuntimeConfig:
     train_data_path: Path
     test_data_path: Path
     reports_dir: Path
+    models_dir: Path
+    mlflow_dir: Path
 
 
 def load_runtime_config(path: str | Path = RUNTIME_CONFIG_PATH) -> RuntimeConfig:
@@ -46,6 +48,8 @@ PROCESSED_DATA_PATH = _DEFAULT_RUNTIME.processed_data_path
 TRAIN_DATA_PATH = _DEFAULT_RUNTIME.train_data_path
 TEST_DATA_PATH = _DEFAULT_RUNTIME.test_data_path
 REPORTS_DIR = _DEFAULT_RUNTIME.reports_dir
+MODELS_DIR = _DEFAULT_RUNTIME.models_dir
+MLFLOW_DIR = _DEFAULT_RUNTIME.mlflow_dir
 
 
 def load_label_config(path: str | Path = LABELS_CONFIG_PATH) -> dict:

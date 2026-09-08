@@ -67,6 +67,8 @@ def test_cli_writes_parquets_and_reports(tmp_path, monkeypatch) -> None:
                 "train_data_path": str(tmp_path / "train.parquet"),
                 "test_data_path": str(tmp_path / "test.parquet"),
                 "reports_dir": str(tmp_path / "reports"),
+                "models_dir": str(tmp_path / "models"),
+                "mlflow_dir": str(tmp_path / "mlruns"),
             }
         )
     )

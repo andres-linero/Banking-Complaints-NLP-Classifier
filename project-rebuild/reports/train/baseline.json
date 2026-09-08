@@ -1,0 +1,40 @@
+{
+  "model": "baseline",
+  "train_rows": 5551,
+  "classes": [
+    "Bank account",
+    "Credit card",
+    "Credit reporting",
+    "Debt collection",
+    "Loan",
+    "Mortgage",
+    "Student loan"
+  ],
+  "vocabulary_size": 50000,
+  "cross_validation": {
+    "folds": 5,
+    "accuracy_mean": 0.8173308682219573,
+    "accuracy_std": 0.011347508967863134,
+    "f1_macro_mean": 0.7731171272545208,
+    "f1_macro_std": 0.012840480696960834
+  },
+  "config": {
+    "features": {
+      "ngram_range": [
+        1,
+        2
+      ],
+      "min_df": 2,
+      "max_features": 50000,
+      "sublinear_tf": true,
+      "lowercase": true,
+      "strip_accents": "unicode"
+    },
+    "classifier": {
+      "C": 4.0,
+      "class_weight": "balanced",
+      "max_iter": 2000
+    }
+  },
+  "mlflow_run_id": "e7a613141ea040a1af8e53a5bafd4950"
+}

@@ -50,3 +50,5 @@ wandb/
 
 # Rebuild: derived data, regenerate with uv run python -m complaints.clean
 project-rebuild/data/processed/
+project-rebuild/models/
+project-rebuild/mlruns/
