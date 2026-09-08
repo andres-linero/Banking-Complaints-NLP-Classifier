@@ -3,7 +3,7 @@ import pytest
 from complaints.vectorize import (
     BASELINE_CONFIG_PATH,
     build_vectorizer,
-    describe_features,
+    describe_vectors,
     load_model_config,
 )
 
@@ -61,11 +61,11 @@ def test_min_df_drops_rare_terms() -> None:
     assert "escrow" not in vocabulary  # appears in one
 
 
-def test_describe_features_reports_shape_and_bigrams() -> None:
+def test_describe_vectors_reports_shape_and_bigrams() -> None:
     vectorizer = build_vectorizer({"ngram_range": [1, 2], "min_df": 1})
     matrix = vectorizer.fit_transform(TEXTS)
 
-    summary = describe_features(vectorizer, matrix)
+    summary = describe_vectors(vectorizer, matrix)
 
     assert summary["rows"] == 4
     assert summary["vocabulary_size"] == matrix.shape[1]

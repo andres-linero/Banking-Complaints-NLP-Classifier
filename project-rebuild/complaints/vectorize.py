@@ -34,7 +34,7 @@ def build_vectorizer(features: dict) -> TfidfVectorizer:
     return TfidfVectorizer(**params)
 
 
-def describe_features(vectorizer: TfidfVectorizer, matrix) -> dict:
+def describe_vectors(vectorizer: TfidfVectorizer, matrix) -> dict:
     """Summarise a fitted vectorizer and the matrix it produced."""
     vocabulary = vectorizer.get_feature_names_out()
     return {
