@@ -1,0 +1,16 @@
+# Baseline model: TF-IDF features + logistic regression.
+# Every value here is a modeling choice. Change it, retrain, compare in MLflow.
+
+features:
+  ngram_range: [1, 2]      # single words and adjacent word pairs
+  min_df: 2                # ignore terms that appear in fewer than 2 complaints
+  max_features: 50000      # keep the 50k most frequent terms
+  sublinear_tf: true       # 1 + log(count) instead of raw count, tames long complaints
+  lowercase: true
+  strip_accents: unicode
+  # No stop-word list: "not", "never", "no" carry meaning in complaints.
+
+classifier:
+  C: 4.0                   # inverse regularisation strength
+  class_weight: balanced   # counter the 14:1 imbalance between Bank account and Loan
+  max_iter: 2000

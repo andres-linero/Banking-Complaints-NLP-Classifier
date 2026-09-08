@@ -1,0 +1,50 @@
+# Label taxonomy for the rebuild.
+#
+# The source CSV mixes two versions of the complaint taxonomy, so the same
+# product appears under two or three raw names. Each key below is the final
+# class the model predicts; the list under it is every raw label that maps to
+# it. Every raw label in the data must appear exactly once in this file, either
+# under a class or under `drop`, otherwise cleaning fails loudly.
+#
+# Row counts come from reports/data_study/study.md.
+#
+# Merges beyond the taxonomy versions, and why:
+#   Money transfer -> Bank account   a 5-fold text model sent 34% of transfer
+#                                    complaints to Bank account; wires, Zelle
+#                                    and app payments run through the account.
+#   4 small loan labels -> Loan      none has enough rows alone; same lending desk.
+# Considered and kept separate: Loan vs Mortgage vs Student loan (mortgage and
+# student loan are strong distinct classes), Debt collection vs Credit reporting
+# (different departments and laws).
+
+classes:
+  Bank account:                     # 2333 rows, includes transfers and wires
+    - Checking or savings account
+    - Bank account or service
+    - Money transfer, virtual currency, or money service
+    - Money transfers
+  Credit card:                      # 1609 rows, includes prepaid cards
+    - Credit card or prepaid card
+    - Credit card
+    - Prepaid card
+  Credit reporting:                 # 1109 rows
+    - Credit reporting
+    - Credit reporting, credit repair services, or other personal consumer reports
+  Mortgage:                         # 848 rows
+    - Mortgage
+  Debt collection:                  # 748 rows
+    - Debt collection
+  Student loan:                     # 201 rows
+    - Student loan
+  Loan:                             # 162 rows: personal, vehicle, payday, title
+    - Consumer Loan
+    - Vehicle loan or lease
+    - Payday loan
+    - Payday loan, title loan, or personal loan
+
+# Raw labels with too few rows to learn from. Their rows are removed.
+drop:
+  - Other financial service         # 1 row
+
+# Rows with fewer words than this carry no signal ("see attachment").
+min_words: 10
