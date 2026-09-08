@@ -8,6 +8,7 @@ import yaml
 REBUILD_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = REBUILD_ROOT.parent
 RUNTIME_CONFIG_PATH = REBUILD_ROOT / "configs" / "runtime.yaml"
+SERVING_CONFIG_PATH = REBUILD_ROOT / "configs" / "serving.yaml"
 
 TEXT_COLUMN = "Complaint Description"
 TARGET_COLUMN = "Banking Product"
@@ -65,3 +66,16 @@ def load_label_config(path: str | Path = LABELS_CONFIG_PATH) -> dict:
     if overlap := drop.intersection(mapping):
         raise ValueError(f"Raw labels both mapped and dropped: {sorted(overlap)}")
     return {"mapping": mapping, "drop": drop, "min_words": int(raw.get("min_words", 0))}
+
+
+def load_serving_config(path: str | Path = SERVING_CONFIG_PATH) -> dict:
+    """Read serving.yaml: which model to load, the review threshold, the input limit."""
+    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    threshold = float(raw.get("review_threshold", 0.0))
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError(f"review_threshold must be between 0 and 1, got {threshold}")
+    return {
+        "model": str(raw.get("model", "baseline")),
+        "review_threshold": threshold,
+        "max_text_chars": int(raw.get("max_text_chars", 20000)),
+    }
