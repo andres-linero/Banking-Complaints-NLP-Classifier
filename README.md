@@ -49,17 +49,21 @@ flowchart LR
     class MODEL,REP out
 ```
 
-Every training run is logged to a local MLflow folder with its config and scores, so a second
-model can be trained on the same rows and compared in one table.
+**How the model is trained**
 
-Three rules the pipeline enforces:
+- **TF-IDF turns text into numbers.** Each complaint becomes a vector over 50,000 words and word
+  pairs, weighted so common words count less and rare ones count more.
+- **Logistic regression draws the boundaries.** One weight per term per class. It outputs a
+  probability for each of the 7 classes, and the highest one is the prediction.
+- **Class weights are balanced.** Bank account has 14 times more rows than Loan, so Loan mistakes
+  cost more during training to stop the model ignoring it.
+- **5-fold cross-validation before the final fit.** The train rows are scored five ways to check
+  the settings, then the model is fitted once on all of them and saved.
+- **One confidence threshold.** Predictions under 0.55 go to a person. Evaluate picks the value
+  from the test set to hit 90% accuracy on what routes automatically.
 
-- **The test set is read once.** The split is frozen to disk with the Complaint ID assignment, so
-  every model is scored on identical rows.
-- **Cleaning is not modelling.** Cleaning collapses anonymised tokens, drops short and duplicate
-  texts, and maps 17 raw labels onto 7 classes from `labels.yaml`. Lowercasing and n-grams are
-  model choices in `baseline.yaml`.
-- **The classifier outputs real probabilities.** The human-review threshold depends on them.
+Every run is logged to MLflow with its settings and scores, so a second model trained on the same
+rows can be compared in one table.
 
 ## Results
 
@@ -131,9 +135,18 @@ uv run python -m complaints.train        # fit the baseline, log to MLflow
 uv run python -m complaints.evaluate     # score the test set once
 ```
 
-Every stage prints what it wrote. Reports are committed so the numbers above can be checked
-without retraining. Parquet files, the saved model, and the MLflow folder are git-ignored and
-regenerate in under a minute. Add `--no-learning-curve` to evaluate to skip its slowest figure.
+Every stage prints what it wrote. Add `--no-learning-curve` to evaluate to skip its slowest figure.
+
+Note:
+
+- Reports are committed, so the numbers above can be checked without retraining. Parquet files,
+  the saved model, and the MLflow folder are git-ignored and regenerate in under a minute.
+- The test set is read by evaluate only. The split is frozen to disk with the Complaint ID
+  assignment, so every model is scored on identical rows.
+- Cleaning is not modelling. Clean collapses anonymised tokens, drops short and duplicate texts,
+  and maps 17 raw labels onto 7 classes from `labels.yaml`. Lowercasing and n-grams are model
+  choices in `baseline.yaml`.
+- The classifier must output real probabilities. The human-review threshold depends on them.
 
 To browse the runs:
 
