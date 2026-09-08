@@ -71,7 +71,12 @@ def load_label_config(path: str | Path = LABELS_CONFIG_PATH) -> dict:
 def load_serving_config(path: str | Path = SERVING_CONFIG_PATH) -> dict:
     """Read serving.yaml: which model to load, the review threshold, the input limit."""
     raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-    threshold = float(raw.get("review_threshold", 0.0))
+    if not isinstance(raw, dict) or "review_threshold" not in raw:
+        raise ValueError(
+            f"Serving config {path} must set review_threshold; "
+            "without it nothing would ever be sent for human review"
+        )
+    threshold = float(raw["review_threshold"])
     if not 0.0 <= threshold <= 1.0:
         raise ValueError(f"review_threshold must be between 0 and 1, got {threshold}")
     return {

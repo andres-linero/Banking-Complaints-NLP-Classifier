@@ -79,6 +79,15 @@ def test_serving_config_rejects_bad_threshold(tmp_path) -> None:
         load_serving_config(path)
 
 
+def test_serving_config_requires_threshold(tmp_path) -> None:
+    """A missing or misspelled key must stop startup, not silently route everything."""
+    path = tmp_path / "serving.yaml"
+    path.write_text("model: baseline\nreview_treshold: 0.75\n")
+
+    with pytest.raises(ValueError, match="must set review_threshold"):
+        load_serving_config(path)
+
+
 def test_real_serving_yaml_threshold_is_075() -> None:
     assert load_serving_config()["review_threshold"] == 0.75
 
