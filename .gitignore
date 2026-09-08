@@ -52,3 +52,6 @@ wandb/
 project-rebuild/data/processed/
 project-rebuild/models/
 project-rebuild/mlruns/
+
+# Local copies of bundled Claude Code skills (design, dataviz); large and version-specific
+.claude/skills/
