@@ -50,3 +50,8 @@ wandb/
 
 # Rebuild: derived data, regenerate with uv run python -m complaints.clean
 project-rebuild/data/processed/
+project-rebuild/models/
+project-rebuild/mlruns/
+
+# Local copies of bundled Claude Code skills (design, dataviz); large and version-specific
+.claude/skills/

@@ -45,6 +45,8 @@ def test_both_stages_use_runtime_config_and_cli_override(tmp_path, monkeypatch):
                 "train_data_path": str(tmp_path / "train.parquet"),
                 "test_data_path": str(tmp_path / "test.parquet"),
                 "reports_dir": str(reports),
+                "models_dir": str(tmp_path / "models"),
+                "mlflow_dir": str(tmp_path / "mlruns"),
             }
         )
     )

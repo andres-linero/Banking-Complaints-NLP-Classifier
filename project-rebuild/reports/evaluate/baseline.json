@@ -1,0 +1,317 @@
+{
+  "model": "baseline",
+  "test_rows": 1388,
+  "classes": [
+    "Bank account",
+    "Credit card",
+    "Credit reporting",
+    "Debt collection",
+    "Loan",
+    "Mortgage",
+    "Student loan"
+  ],
+  "accuracy": 0.8249279538904899,
+  "f1_macro": 0.8064374186826667,
+  "f1_weighted": 0.8238868583604826,
+  "per_class": {
+    "Bank account": {
+      "precision": 0.8612836438923396,
+      "recall": 0.8984881209503239,
+      "f1-score": 0.879492600422833,
+      "support": 463.0
+    },
+    "Credit card": {
+      "precision": 0.7917981072555205,
+      "recall": 0.784375,
+      "f1-score": 0.7880690737833596,
+      "support": 320.0
+    },
+    "Credit reporting": {
+      "precision": 0.7714285714285715,
+      "recall": 0.75,
+      "f1-score": 0.7605633802816901,
+      "support": 216.0
+    },
+    "Debt collection": {
+      "precision": 0.7730496453900709,
+      "recall": 0.7364864864864865,
+      "f1-score": 0.754325259515571,
+      "support": 148.0
+    },
+    "Loan": {
+      "precision": 0.7407407407407407,
+      "recall": 0.625,
+      "f1-score": 0.6779661016949152,
+      "support": 32.0
+    },
+    "Mortgage": {
+      "precision": 0.875,
+      "recall": 0.9112426035502958,
+      "f1-score": 0.8927536231884058,
+      "support": 169.0
+    },
+    "Student loan": {
+      "precision": 0.9705882352941176,
+      "recall": 0.825,
+      "f1-score": 0.8918918918918919,
+      "support": 40.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      416,
+      30,
+      6,
+      5,
+      2,
+      4,
+      0
+    ],
+    [
+      44,
+      251,
+      19,
+      5,
+      1,
+      0,
+      0
+    ],
+    [
+      8,
+      22,
+      162,
+      13,
+      2,
+      9,
+      0
+    ],
+    [
+      5,
+      10,
+      15,
+      109,
+      2,
+      7,
+      0
+    ],
+    [
+      4,
+      0,
+      4,
+      2,
+      20,
+      1,
+      1
+    ],
+    [
+      6,
+      2,
+      2,
+      5,
+      0,
+      154,
+      0
+    ],
+    [
+      0,
+      2,
+      2,
+      2,
+      0,
+      1,
+      33
+    ]
+  ],
+  "thresholds": {
+    "target_routed_accuracy": 0.9,
+    "recommended": 0.55,
+    "sweep": [
+      {
+        "threshold": 0.0,
+        "coverage": 1.0,
+        "routed_accuracy": 0.8249279538904899
+      },
+      {
+        "threshold": 0.05,
+        "coverage": 1.0,
+        "routed_accuracy": 0.8249279538904899
+      },
+      {
+        "threshold": 0.1,
+        "coverage": 1.0,
+        "routed_accuracy": 0.8249279538904899
+      },
+      {
+        "threshold": 0.15,
+        "coverage": 1.0,
+        "routed_accuracy": 0.8249279538904899
+      },
+      {
+        "threshold": 0.2,
+        "coverage": 0.9992795389048992,
+        "routed_accuracy": 0.8255227108868061
+      },
+      {
+        "threshold": 0.25,
+        "coverage": 0.9927953890489913,
+        "routed_accuracy": 0.8301886792452831
+      },
+      {
+        "threshold": 0.3,
+        "coverage": 0.9632564841498559,
+        "routed_accuracy": 0.8429319371727748
+      },
+      {
+        "threshold": 0.35,
+        "coverage": 0.9301152737752162,
+        "routed_accuracy": 0.8536018590240124
+      },
+      {
+        "threshold": 0.4,
+        "coverage": 0.8847262247838616,
+        "routed_accuracy": 0.8640065146579805
+      },
+      {
+        "threshold": 0.45,
+        "coverage": 0.8414985590778098,
+        "routed_accuracy": 0.872431506849315
+      },
+      {
+        "threshold": 0.5,
+        "coverage": 0.7795389048991355,
+        "routed_accuracy": 0.890018484288355
+      },
+      {
+        "threshold": 0.55,
+        "coverage": 0.707492795389049,
+        "routed_accuracy": 0.9073319755600815
+      },
+      {
+        "threshold": 0.6,
+        "coverage": 0.6376080691642652,
+        "routed_accuracy": 0.919774011299435
+      },
+      {
+        "threshold": 0.65,
+        "coverage": 0.5842939481268011,
+        "routed_accuracy": 0.9309494451294698
+      },
+      {
+        "threshold": 0.7,
+        "coverage": 0.5129682997118156,
+        "routed_accuracy": 0.9353932584269663
+      },
+      {
+        "threshold": 0.75,
+        "coverage": 0.43515850144092216,
+        "routed_accuracy": 0.9503311258278145
+      },
+      {
+        "threshold": 0.8,
+        "coverage": 0.361671469740634,
+        "routed_accuracy": 0.9601593625498008
+      },
+      {
+        "threshold": 0.85,
+        "coverage": 0.28097982708933716,
+        "routed_accuracy": 0.9743589743589743
+      },
+      {
+        "threshold": 0.9,
+        "coverage": 0.17723342939481268,
+        "routed_accuracy": 0.9796747967479674
+      },
+      {
+        "threshold": 0.95,
+        "coverage": 0.06195965417867435,
+        "routed_accuracy": 0.9883720930232558
+      }
+    ]
+  },
+  "calibration": [
+    {
+      "bin": "0.1-0.2",
+      "count": 1,
+      "mean_confidence": 0.19597500999669232,
+      "accuracy": 0.0
+    },
+    {
+      "bin": "0.2-0.3",
+      "count": 50,
+      "mean_confidence": 0.27061012289380326,
+      "accuracy": 0.36
+    },
+    {
+      "bin": "0.3-0.4",
+      "count": 109,
+      "mean_confidence": 0.3560582041206054,
+      "accuracy": 0.6055045871559633
+    },
+    {
+      "bin": "0.4-0.5",
+      "count": 146,
+      "mean_confidence": 0.45624465853800483,
+      "accuracy": 0.6712328767123288
+    },
+    {
+      "bin": "0.5-0.6",
+      "count": 197,
+      "mean_confidence": 0.5495407317756487,
+      "accuracy": 0.7563451776649747
+    },
+    {
+      "bin": "0.6-0.7",
+      "count": 173,
+      "mean_confidence": 0.6531883247122525,
+      "accuracy": 0.8554913294797688
+    },
+    {
+      "bin": "0.7-0.8",
+      "count": 210,
+      "mean_confidence": 0.7483757421127989,
+      "accuracy": 0.8761904761904762
+    },
+    {
+      "bin": "0.8-0.9",
+      "count": 256,
+      "mean_confidence": 0.8541421325885512,
+      "accuracy": 0.94140625
+    },
+    {
+      "bin": "0.9-1.0",
+      "count": 246,
+      "mean_confidence": 0.9392051592197951,
+      "accuracy": 0.9796747967479674
+    }
+  ],
+  "learning_curve": {
+    "train_sizes": [
+      444,
+      1110,
+      2220,
+      3330,
+      4440
+    ],
+    "train_f1_macro": [
+      0.9984254663049279,
+      0.9974876683771206,
+      0.9938452776646779,
+      0.9894057519132857,
+      0.9882024825038155
+    ],
+    "validation_f1_macro": [
+      0.6017891146051204,
+      0.6988421623434863,
+      0.7496915894286993,
+      0.7651779825035087,
+      0.7728580173947649
+    ],
+    "validation_f1_macro_std": [
+      0.01464481707464668,
+      0.00821390855876956,
+      0.01370491467736085,
+      0.012996247071395848,
+      0.013240295351116088
+    ]
+  }
+}
