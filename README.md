@@ -8,22 +8,16 @@
 
 Route consumer banking complaints to the right product team from the complaint text alone.
 
-Given a free-text narrative, the model returns one of seven product classes and a confidence
-score. Complaints below a confidence threshold are handed to a person instead of routed
-automatically. The project began as an exploration notebook, became a Python package, and has now
-been rebuilt from the ground up as small, separately runnable stages under `project-rebuild/`.
-
-**Status:** the new model is trained and evaluated. The dashboard, API, and MCP server still run
-on the old package until the serve stage lands. See [Migration](#migration).
+A complaint goes in as free text. The model returns one of seven product classes and a confidence
+score. Complaints below a confidence threshold go to a person instead of being routed
+automatically. The code lives in `project-rebuild/`, one runnable stage per module.
 
 **Contents:**
 [How it works](#how-it-works) ·
 [Results](#results) ·
-[Old model vs new model](#old-model-vs-new-model) ·
 [Stages and files](#stages-and-files) ·
 [Quick start](#quick-start) ·
-[Migration](#migration) ·
-[Serving today](#serving-today) ·
+[Serving](#serving) ·
 [Development](#development) ·
 [Project layout](#project-layout)
 
@@ -34,19 +28,22 @@ the train rows, scores it on the test rows exactly once, and serves it.
 
 <img src="docs/pipeline.svg" alt="Training map: data path from the raw CSV through ingest, clean, and split; model path through vectorize, classifier, evaluate, and serve; every run tracked in MLflow" width="100%">
 
-
 **How the model is trained**
 
+- **Clean before anything learns.** Anonymised tokens and money masks are collapsed, very short and
+  duplicate complaints are dropped, and 17 raw labels are mapped onto 7 classes from `labels.yaml`.
+- **Split once, then never touch the test rows.** 80 / 20, stratified by class, seed 42. The
+  Complaint ID assignment is written to disk so every model is scored on identical rows.
 - **TF-IDF turns text into numbers.** Each complaint becomes a vector over 50,000 words and word
-  pairs, weighted so common words count less and rare ones count more.
+  pairs, weighted so common words count less and rare ones count more. Fitted on train rows only.
 - **Logistic regression draws the boundaries.** One weight per term per class. It outputs a
   probability for each of the 7 classes, and the highest one is the prediction.
 - **Class weights are balanced.** Bank account has 14 times more rows than Loan, so Loan mistakes
   cost more during training to stop the model ignoring it.
 - **5-fold cross-validation before the final fit.** The train rows are scored five ways to check
   the settings, then the model is fitted once on all of them and saved.
-- **One confidence threshold.** Predictions under 0.55 go to a person. Evaluate picks the value
-  from the test set to hit 90% accuracy on what routes automatically.
+- **One confidence threshold.** Evaluate sweeps it on the test set and reports the trade between
+  how many complaints route automatically and how often they are right.
 
 Every run is logged to MLflow with its settings and scores, so a second model trained on the same
 rows can be compared in one table.
@@ -57,9 +54,9 @@ Baseline model, scored once on the 1,388 complaints it never saw.
 
 | Metric | Value | Note |
 | --- | --- | --- |
-| Accuracy | 0.825 | Old model on its own split: 0.789 |
+| Accuracy | 0.825 | Share of test complaints routed to the right class |
 | Macro F1 | 0.806 | Every class counts the same, big or small |
-| Human-review threshold | 0.55 | Routes 71% of complaints automatically at 90.7% accuracy |
+| Threshold 0.55 | 71% routed at 90.7% accuracy | The point where automatic routing hits 90% |
 | Weakest class | Loan, F1 0.68 | 32 test rows, spills into four other classes |
 
 <p>
@@ -74,19 +71,6 @@ the cutoff and fewer complaints route automatically, but the ones that do are ri
 Per-class scores, the full confusion matrix, and the most confident wrong predictions are in
 `project-rebuild/reports/evaluate/`.
 
-## Old model vs new model
-
-| Step | Old | New | Why |
-| --- | --- | --- | --- |
-| Data cleaning | Drop empty rows only | Redaction and money masks collapsed, short texts and duplicates removed | 13 anonymised tokens per complaint were feeding the vocabulary as noise |
-| Labels | Mapped in Python, rare classes into Other | 7 classes from `labels.yaml`, no Other bucket | Other had 9 test rows and half recall. Money transfer merged into bank account on evidence |
-| Train / test split | Re-split inside every training run | Frozen once to parquet, assignment on record | Models can only be compared on identical rows |
-| Text conversion | spaCy lemmatisation, then TF-IDF | TF-IDF only | Lemmatisation was most of the prediction cost for no measurable gain |
-| Classifier | LinearSVC inside a calibration wrapper | Logistic regression | Gives real probabilities on its own, which the human-review threshold needs |
-| Packaging | scikit-learn Pipeline saved with joblib | Same | Nothing better exists for this job |
-| Second output | VADER sentiment | None for now | Nearly every complaint scores negative, so sentiment carries no information |
-| Experiment tracking | One JSON file, overwritten each run | MLflow, one row per run | Baseline vs later experiments is the result the project shows |
-
 ## Stages and files
 
 Each stage is one module under `project-rebuild/complaints/`, runnable on its own, with a
@@ -100,12 +84,14 @@ Each stage is one module under `project-rebuild/complaints/`, runnable on its ow
 | 3 · Split | `split.py` | `clean.parquet` | `train.parquet`, `test.parquet`, `reports/split/` |
 | 4 · Train | `train.py` | `train.parquet`, `configs/baseline.yaml` | `models/baseline.joblib`, `reports/train/baseline.json`, MLflow run |
 | 5 · Evaluate | `evaluate.py` | `test.parquet`, `models/baseline.joblib` | `reports/evaluate/baseline.json`, `worst_mistakes.csv`, `figures/` |
+| 6 · Serve | `predictor.py` | `models/baseline.joblib`, `configs/serving.yaml` | Nothing. Returns product, confidence, needs_review |
 
 Two more modules support the stages. `config.py` resolves paths and loads the label map, and
 `vectorize.py` builds the TF-IDF step from `configs/baseline.yaml`.
 
-Three YAML files under `project-rebuild/configs/` hold every setting: `runtime.yaml` for paths,
-`labels.yaml` for the label map, and `baseline.yaml` for every modelling choice.
+Four YAML files under `project-rebuild/configs/` hold every setting: `runtime.yaml` for paths,
+`labels.yaml` for the label map, `baseline.yaml` for every modelling choice, and `serving.yaml`
+for the model name and the review threshold.
 
 ## Quick start
 
@@ -129,10 +115,9 @@ Note:
   the saved model, and the MLflow folder are git-ignored and regenerate in under a minute.
 - The test set is read by evaluate only. The split is frozen to disk with the Complaint ID
   assignment, so every model is scored on identical rows.
-- Cleaning is not modelling. Clean collapses anonymised tokens, drops short and duplicate texts,
-  and maps 17 raw labels onto 7 classes from `labels.yaml`. Lowercasing and n-grams are model
-  choices in `baseline.yaml`.
-- The classifier must output real probabilities. The human-review threshold depends on them.
+- Cleaning is not modelling. Lowercasing and n-grams are model choices in `baseline.yaml`, not
+  cleaning steps.
+- The classifier must output real probabilities. The review threshold depends on them.
 
 To browse the runs:
 
@@ -140,32 +125,17 @@ To browse the runs:
 cd project-rebuild && uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 ```
 
-## Migration
+## Serving
 
-The rebuild replaces the old package `src/banking_complaints` one piece at a time. The training
-side is done. The serving side is next.
+One predictor, three doors. `predictor.py` loads the saved model once, applies the same text
+normalisation as training, and returns the product, the confidence, and whether the complaint
+needs a person. The doors are thin wrappers around it and hold no logic of their own.
 
-| Step | State |
-| --- | --- |
-| Stages 1 to 5: ingest, clean, split, train, evaluate | Done, 39 tests |
-| Stage 6: a predictor that loads the model once and returns class, confidence, and a needs-review flag | Next |
-| Point FastAPI, Streamlit, and the MCP server at the predictor | After stage 6 |
-| Remove `src/banking_complaints` and the old `models/` and `reports/` folders | Last |
-| Optional experiments: sentence embeddings, DistilBERT, scored with the same evaluate stage | After migration |
-
-The baseline ships unless an experiment beats it clearly on the same test rows.
-
-## Serving today
-
-Until the migration reaches them, these three surfaces load the old model at
-`models/complaint_classifier.joblib` and use its nine labels and sentiment output. Train that
-model first with `uv run python -m banking_complaints.train_sklearn`.
-
-| Audience | Surface | Command |
+| Audience | Door | Command, from `project-rebuild` |
 | --- | --- | --- |
-| People | Streamlit dashboard | `uv run streamlit run streamlit_app.py` |
-| Applications | FastAPI `/predict` | `uv run uvicorn banking_complaints.api:app --reload` |
-| AI assistants and agents | MCP server | `uv sync --group mcp && uv run python -m banking_complaints.mcp_server` |
+| Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload` |
+| People | Streamlit page | `uv run streamlit run complaints/app.py` |
+| AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
 
 ```bash
 curl -X POST http://127.0.0.1:8000/predict \
@@ -173,12 +143,22 @@ curl -X POST http://127.0.0.1:8000/predict \
   -d '{"text": "The bank charged me fees I do not recognize and nobody has resolved my complaint."}'
 ```
 
-The MCP server binds to localhost only. Do not expose it publicly without adding authentication.
+```json
+{
+  "product": "Bank account",
+  "confidence": 0.71,
+  "needs_review": true,
+  "probabilities": {"Bank account": 0.71, "Credit card": 0.17, "...": "..."}
+}
+```
+
+The review threshold lives in `configs/serving.yaml`. Change it there and every door moves
+together. The example response above uses illustrative numbers.
 
 ## Development
 
 ```bash
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 uv run pytest -q          # old package tests and rebuild tests
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 uv run pytest -q
 uv run ruff check src tests project-rebuild streamlit_app.py
 uv run ruff format --check src tests project-rebuild streamlit_app.py
 ```
@@ -193,30 +173,31 @@ Reproducibility notes:
 - The split is deterministic, seed 42, and `reports/split/assignment.csv` records which Complaint
   ID went where.
 - Trained models, parquet files, MLflow runs, and the virtual environment are git-ignored.
-- Optional dependency groups: `bert` for PyTorch and Transformers, `mcp` for the MCP SDK, `dev`
+- Optional dependency groups: `mcp` for the MCP SDK, `bert` for PyTorch and Transformers, `dev`
   for Jupyter and the notebook-only libraries.
 
 ## Project layout
 
 ```text
 project-rebuild/
-  complaints/                new package, one module per stage
-  configs/                   runtime.yaml, labels.yaml, baseline.yaml
+  complaints/                one module per stage, plus the serving doors
+  configs/                   runtime.yaml, labels.yaml, baseline.yaml, serving.yaml
   reports/                   committed outputs of every stage
-  tests/                     tests for the rebuild
+  tests/                     tests for every stage
   data/processed/            parquet files, git-ignored
   models/  mlruns/           saved model and MLflow runs, git-ignored
-src/banking_complaints/      old package, still serves the dashboard, API, and MCP
-tests/                       old package tests
-streamlit_app.py             dashboard UI, old model
+docs/pipeline.svg            the training map above
 complaints_banking_2023.csv  local dataset
 NLP_Project_Andres_RL.ipynb  original exploration notebook
-pyproject.toml               metadata, both packages, dependency groups
+pyproject.toml               metadata and dependency groups
 uv.lock                      pinned lockfile used by uv sync
 .github/workflows/ci.yml     lint and test workflow
 ```
 
+`src/banking_complaints`, `tests/`, and `streamlit_app.py` are the previous version of the
+project. They are removed once the rebuild replaces them.
+
 ## Notebook role
 
 The notebook is the exploration record: EDA, preprocessing experiments, model trials, and the
-original write-up. The reusable implementation now lives in `project-rebuild/complaints`.
+original write-up. The reusable implementation lives in `project-rebuild/complaints`.
