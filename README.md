@@ -85,7 +85,7 @@ Each stage is one module under `src/complaints/`, runnable on its own, with a
 | 3 · Split | `split.py` | `clean.parquet` | `train.parquet`, `test.parquet`, `reports/split/` |
 | 4 · Train | `train.py` | `train.parquet`, `configs/baseline.yaml` | `models/baseline.joblib`, `reports/train/baseline.json`, MLflow run |
 | 5 · Evaluate | `evaluate.py` | `test.parquet`, `models/baseline.joblib` | `reports/evaluate/baseline.json`, `worst_mistakes.csv`, `figures/` |
-| 6 · Serve | `predictor.py` | `models/baseline.joblib`, `configs/serving.yaml` | Nothing. Returns product, confidence, needs_review |
+| 6 · Serve | `predictor.py`, `inbox.py` (demo) | `models/baseline.joblib`, `configs/serving.yaml` | Nothing. Returns product, confidence, needs_review |
 
 Two more modules support the stages. `config.py` resolves paths and loads the label map, and
 `vectorize.py` builds the TF-IDF step from `configs/baseline.yaml`.
@@ -134,7 +134,7 @@ needs a person. The doors are thin wrappers around it and hold no logic of their
 | Audience | Door | Command |
 | --- | --- | --- |
 | Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload` |
-| People | Streamlit page | `uv run streamlit run src/complaints/app.py` |
+| People | Streamlit app, Classify and Inbox pages | `uv run streamlit run src/complaints/app.py` |
 | AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
 
 ```bash
@@ -159,6 +159,16 @@ curl -X POST http://127.0.0.1:8000/predict \
 
 The review threshold lives in `configs/serving.yaml`, currently 0.75. Change it there and every
 door moves together. The response above is the real output of the saved model for that text.
+
+### Demo: the inbox
+
+The model only understands banking complaints, so the demo feeds it banking complaints. The
+Streamlit app has an **Inbox** page: a synthetic mailbox where every email is a real complaint
+from the frozen test set, wrapped in an invented sender, subject, and date. Each email is routed
+to a department folder, or to **Needs a person** when the confidence is under the threshold, and
+marked correct or wrong against its true label. The same mailbox is served by the API as a fake
+mail source: `GET /inbox?n=20&seed=42` returns the emails, `GET /inbox/next` hands out one at a
+time. The generator lives in `inbox.py` and never touches the model.
 
 ## Development
 
