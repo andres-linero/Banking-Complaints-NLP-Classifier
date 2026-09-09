@@ -1,19 +1,27 @@
 """Door for applications: a FastAPI service around the predictor.
 
 Run with: uv run uvicorn complaints.api:app --reload
-    POST /predict   {"text": "..."}  ->  product, confidence, needs_review, probabilities
-    GET  /health    model name, threshold, classes
+    POST /predict      {"text": "..."}  ->  product, confidence, needs_review, probabilities
+    GET  /health       model name, threshold, classes
+    GET  /inbox        demo: n synthetic complaint emails built from the test set
+    GET  /inbox/next   demo: the next email from that inbox, cycling
 """
 
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from itertools import count
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from complaints.config import load_serving_config
+from complaints.inbox import make_inbox
 from complaints.predictor import get_predictor
+
+INBOX_SIZE = 20
+INBOX_SEED = 42
+_next_email = count()
 
 
 class ComplaintIn(BaseModel):
@@ -55,3 +63,16 @@ def predict(complaint: ComplaintIn) -> PredictionOut:
     if not complaint.text.strip():
         raise HTTPException(status_code=422, detail="Text is empty")
     return PredictionOut(**get_predictor().predict(complaint.text).to_dict())
+
+
+@app.get("/inbox")
+def inbox(n: int = Query(INBOX_SIZE, ge=1, le=200), seed: int = INBOX_SEED) -> list[dict]:
+    """Demo mail source: synthetic emails wrapping real held-out complaints."""
+    return [email.to_dict() for email in make_inbox(n=n, seed=seed)]
+
+
+@app.get("/inbox/next")
+def inbox_next() -> dict:
+    """Demo mail source: hand out one email per call, cycling through the inbox."""
+    emails = make_inbox(n=INBOX_SIZE, seed=INBOX_SEED)
+    return emails[next(_next_email) % len(emails)].to_dict()
