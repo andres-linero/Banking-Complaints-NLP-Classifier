@@ -57,6 +57,7 @@ Baseline model, scored once on the 1,388 complaints it never saw.
 | Accuracy | 0.825 | Share of test complaints routed to the right class |
 | Macro F1 | 0.806 | Every class counts the same, big or small |
 | Threshold 0.55 | 71% routed at 90.7% accuracy | The point where automatic routing hits 90% |
+| Threshold 0.75 | 44% routed at 95.0% accuracy | The setting in `serving.yaml`; the rest go to a person |
 | Weakest class | Loan, F1 0.68 | 32 test rows, spills into four other classes |
 
 <p>
@@ -78,7 +79,7 @@ Each stage is one module under `src/complaints/`, runnable on its own, with a
 
 | Stage | Module | Reads | Writes |
 | --- | --- | --- | --- |
-| 1 · Ingest | `ingest.py` | `complaints_banking_2023.csv` | Nothing. Library used by the next two stages |
+| 1 · Ingest | `ingest.py` | `data/raw/complaints_banking_2023.csv` | Nothing. Library used by the next two stages |
 | 1 · Data study | `data_study.py` | Raw CSV | `reports/data_study/audit.json`, `study.md` |
 | 2 · Clean | `clean.py` | Raw CSV, `configs/labels.yaml` | `data/processed/clean.parquet`, `reports/cleaning/report.json` |
 | 3 · Split | `split.py` | `clean.parquet` | `train.parquet`, `test.parquet`, `reports/split/` |
@@ -145,14 +146,19 @@ curl -X POST http://127.0.0.1:8000/predict \
 ```json
 {
   "product": "Bank account",
-  "confidence": 0.71,
+  "confidence": 0.3496,
   "needs_review": true,
-  "probabilities": {"Bank account": 0.71, "Credit card": 0.17, "...": "..."}
+  "probabilities": {
+    "Bank account": 0.3496,
+    "Credit card": 0.1787,
+    "Mortgage": 0.1433,
+    "...": "..."
+  }
 }
 ```
 
-The review threshold lives in `configs/serving.yaml`. Change it there and every door moves
-together. The example response above uses illustrative numbers.
+The review threshold lives in `configs/serving.yaml`, currently 0.75. Change it there and every
+door moves together. The response above is the real output of the saved model for that text.
 
 ## Development
 
