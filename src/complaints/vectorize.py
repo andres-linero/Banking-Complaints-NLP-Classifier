@@ -12,9 +12,9 @@ from pathlib import Path
 import yaml
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from complaints.config import REBUILD_ROOT
+from complaints.config import PROJECT_ROOT
 
-BASELINE_CONFIG_PATH = REBUILD_ROOT / "configs" / "baseline.yaml"
+BASELINE_CONFIG_PATH = PROJECT_ROOT / "configs" / "baseline.yaml"
 
 
 def load_model_config(path: str | Path = BASELINE_CONFIG_PATH) -> dict:

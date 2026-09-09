@@ -21,10 +21,10 @@ jobs:
         run: uv sync --python 3.11 --locked
 
       - name: Ruff lint
-        run: uv run ruff check src tests project-rebuild streamlit_app.py
+        run: uv run ruff check src tests
 
       - name: Ruff format check
-        run: uv run ruff format --check src tests project-rebuild streamlit_app.py
+        run: uv run ruff format --check src tests
 
       - name: Pytest
         env:

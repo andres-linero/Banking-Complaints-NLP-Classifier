@@ -1,6 +1,6 @@
 """Door for people: a small Streamlit page around the predictor.
 
-Run with: uv run streamlit run project-rebuild/complaints/app.py
+Run with: uv run streamlit run src/complaints/app.py
 """
 
 from __future__ import annotations

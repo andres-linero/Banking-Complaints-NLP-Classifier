@@ -10,7 +10,7 @@ Route consumer banking complaints to the right product team from the complaint t
 
 A complaint goes in as free text. The model returns one of seven product classes and a confidence
 score. Complaints below a confidence threshold go to a person instead of being routed
-automatically. The code lives in `project-rebuild/`, one runnable stage per module.
+automatically. The code lives in `src/complaints/`, one runnable stage per module.
 
 **Contents:**
 [How it works](#how-it-works) ·
@@ -60,8 +60,8 @@ Baseline model, scored once on the 1,388 complaints it never saw.
 | Weakest class | Loan, F1 0.68 | 32 test rows, spills into four other classes |
 
 <p>
-  <img src="project-rebuild/reports/evaluate/figures/confusion_matrix.png" width="48%" alt="Confusion matrix on the test set">
-  <img src="project-rebuild/reports/evaluate/figures/threshold_curve.png" width="48%" alt="Coverage and routed accuracy against the confidence threshold">
+  <img src="reports/evaluate/figures/confusion_matrix.png" width="48%" alt="Confusion matrix on the test set">
+  <img src="reports/evaluate/figures/threshold_curve.png" width="48%" alt="Coverage and routed accuracy against the confidence threshold">
 </p>
 
 Rows of the confusion matrix are the true class. The two biggest leaks are credit card read as
@@ -69,11 +69,11 @@ bank account, and credit reporting read as credit card. The threshold curve show
 the cutoff and fewer complaints route automatically, but the ones that do are right more often.
 
 Per-class scores, the full confusion matrix, and the most confident wrong predictions are in
-`project-rebuild/reports/evaluate/`.
+`reports/evaluate/`.
 
 ## Stages and files
 
-Each stage is one module under `project-rebuild/complaints/`, runnable on its own, with a
+Each stage is one module under `src/complaints/`, runnable on its own, with a
 `--config` flag that points at `configs/runtime.yaml`. Command-line paths override the YAML.
 
 | Stage | Module | Reads | Writes |
@@ -89,7 +89,7 @@ Each stage is one module under `project-rebuild/complaints/`, runnable on its ow
 Two more modules support the stages. `config.py` resolves paths and loads the label map, and
 `vectorize.py` builds the TF-IDF step from `configs/baseline.yaml`.
 
-Four YAML files under `project-rebuild/configs/` hold every setting: `runtime.yaml` for paths,
+Four YAML files under `configs/` hold every setting: `runtime.yaml` for paths,
 `labels.yaml` for the label map, `baseline.yaml` for every modelling choice, and `serving.yaml`
 for the model name and the review threshold.
 
@@ -98,8 +98,7 @@ for the model name and the review threshold.
 Requirements: Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uv sync                               # create .venv from uv.lock
-cd project-rebuild
+uv sync                                  # create .venv from uv.lock
 uv run python -m complaints.data_study   # audit the raw CSV, optional
 uv run python -m complaints.clean        # labels and text cleaning
 uv run python -m complaints.split        # freeze train and test
@@ -122,7 +121,7 @@ Note:
 To browse the runs:
 
 ```bash
-cd project-rebuild && uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
+uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 ```
 
 ## Serving
@@ -131,10 +130,10 @@ One predictor, three doors. `predictor.py` loads the saved model once, applies t
 normalisation as training, and returns the product, the confidence, and whether the complaint
 needs a person. The doors are thin wrappers around it and hold no logic of their own.
 
-| Audience | Door | Command, from `project-rebuild` |
+| Audience | Door | Command |
 | --- | --- | --- |
 | Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload` |
-| People | Streamlit page | `uv run streamlit run complaints/app.py` |
+| People | Streamlit page | `uv run streamlit run src/complaints/app.py` |
 | AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
 
 ```bash
@@ -159,8 +158,8 @@ together. The example response above uses illustrative numbers.
 
 ```bash
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 uv run pytest -q
-uv run ruff check src tests project-rebuild streamlit_app.py
-uv run ruff format --check src tests project-rebuild streamlit_app.py
+uv run ruff check src tests
+uv run ruff format --check src tests
 ```
 
 GitHub Actions runs the same three checks with uv on Python 3.11 for every push to `main` and
@@ -179,25 +178,22 @@ Reproducibility notes:
 ## Project layout
 
 ```text
-project-rebuild/
-  complaints/                one module per stage, plus the serving doors
-  configs/                   runtime.yaml, labels.yaml, baseline.yaml, serving.yaml
-  reports/                   committed outputs of every stage
-  tests/                     tests for every stage
-  data/processed/            parquet files, git-ignored
-  models/  mlruns/           saved model and MLflow runs, git-ignored
+src/complaints/              one module per stage, plus the serving doors
+configs/                     runtime.yaml, labels.yaml, baseline.yaml, serving.yaml
+tests/                       tests for every stage
+reports/                     committed outputs of every stage
+data/raw/                    complaints_banking_2023.csv, the dataset
+data/processed/              parquet files, git-ignored
+models/  mlruns/             saved model and MLflow runs, git-ignored
+notebooks/                   original exploration notebook
 docs/pipeline.svg            the training map above
-complaints_banking_2023.csv  local dataset
-NLP_Project_Andres_RL.ipynb  original exploration notebook
 pyproject.toml               metadata and dependency groups
 uv.lock                      pinned lockfile used by uv sync
 .github/workflows/ci.yml     lint and test workflow
 ```
 
-`src/banking_complaints`, `tests/`, and `streamlit_app.py` are the previous version of the
-project. They are removed once the rebuild replaces them.
-
 ## Notebook role
 
 The notebook is the exploration record: EDA, preprocessing experiments, model trials, and the
-original write-up. The reusable implementation lives in `project-rebuild/complaints`.
+original write-up. The reusable implementation lives in `src/complaints`. Opening the notebook needs its own
+dependencies: `uv sync --group notebook`.

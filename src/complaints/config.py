@@ -5,10 +5,9 @@ from pathlib import Path
 
 import yaml
 
-REBUILD_ROOT = Path(__file__).resolve().parents[1]
-PROJECT_ROOT = REBUILD_ROOT.parent
-RUNTIME_CONFIG_PATH = REBUILD_ROOT / "configs" / "runtime.yaml"
-SERVING_CONFIG_PATH = REBUILD_ROOT / "configs" / "serving.yaml"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]  # src/complaints/config.py -> repo root
+RUNTIME_CONFIG_PATH = PROJECT_ROOT / "configs" / "runtime.yaml"
+SERVING_CONFIG_PATH = PROJECT_ROOT / "configs" / "serving.yaml"
 
 TEXT_COLUMN = "Complaint Description"
 TARGET_COLUMN = "Banking Product"
@@ -27,7 +26,7 @@ class RuntimeConfig:
 
 
 def load_runtime_config(path: str | Path = RUNTIME_CONFIG_PATH) -> RuntimeConfig:
-    """Load runtime paths; relative YAML values resolve against project-rebuild."""
+    """Load runtime paths; relative YAML values resolve against the repo root."""
     raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     fields = tuple(RuntimeConfig.__dataclass_fields__)
     if not isinstance(raw, dict) or set(raw) != set(fields):
@@ -38,7 +37,7 @@ def load_runtime_config(path: str | Path = RUNTIME_CONFIG_PATH) -> RuntimeConfig
         if not isinstance(value, str) or not value.strip():
             raise ValueError(f"Runtime config {name} must be a nonempty path string")
         value = Path(value).expanduser()
-        paths[name] = (REBUILD_ROOT / value).resolve()
+        paths[name] = (PROJECT_ROOT / value).resolve()
     return RuntimeConfig(**paths)
 
 
