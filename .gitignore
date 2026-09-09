@@ -27,31 +27,17 @@ dist/
 coverage.xml
 htmlcov/
 
-# Trained model artifacts
-models/*.joblib
-models/*.pkl
-models/*.pt
-models/*.bin
-models/*.safetensors
-models/bert*/
-
-# Generated reports / experiment output
-reports/figures/
-reports/*.csv
-reports/*.json
-reports/*.txt
+# Trained models, MLflow runs, and derived data: regenerate with the stage commands
+models/
 mlruns/
-wandb/
+data/processed/
+
 
 # Local databases / logs
 *.sqlite
 *.sqlite3
 *.log
 
-# Rebuild: derived data, regenerate with uv run python -m complaints.clean
-project-rebuild/data/processed/
-project-rebuild/models/
-project-rebuild/mlruns/
 
 # Local copies of bundled Claude Code skills (design, dataviz); large and version-specific
 .claude/skills/

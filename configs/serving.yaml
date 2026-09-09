@@ -1,0 +1,11 @@
+# Serving settings. The predictor, the API, the dashboard, and the MCP server all read this.
+
+model: baseline               # models/<model>.joblib
+
+# Complaints whose top probability is below this go to a person instead of
+# being routed automatically. From reports/evaluate/baseline.json:
+#   0.55 -> routes 71% automatically at 90.7% accuracy
+#   0.75 -> routes 44% automatically at 95.0% accuracy   (current)
+review_threshold: 0.75
+
+max_text_chars: 20000         # longest complaint the API accepts

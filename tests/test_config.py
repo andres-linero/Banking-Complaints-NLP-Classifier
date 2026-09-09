@@ -6,15 +6,15 @@ import pytest
 import yaml
 
 from complaints import clean, data_study
-from complaints.config import REBUILD_ROOT, load_runtime_config
+from complaints.config import PROJECT_ROOT, load_runtime_config
 from complaints.ingest import REQUIRED_COLUMNS
 
 
-def test_runtime_paths_are_relative_to_rebuild(tmp_path, monkeypatch):
+def test_runtime_paths_are_relative_to_repo_root(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     runtime = load_runtime_config()
-    assert runtime.labels_config_path == REBUILD_ROOT / "configs" / "labels.yaml"
-    assert runtime.processed_data_path == REBUILD_ROOT / "data" / "processed" / "clean.parquet"
+    assert runtime.labels_config_path == PROJECT_ROOT / "configs" / "labels.yaml"
+    assert runtime.processed_data_path == PROJECT_ROOT / "data" / "processed" / "clean.parquet"
 
 
 @pytest.mark.parametrize("content", ["[]", "raw_data_path: sample.csv", "null"])

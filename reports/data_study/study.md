@@ -15,14 +15,13 @@ Rows: 7011 · Columns: 8
 | ZIP | 30 | 3442 |
 | Bank Response | 0 | 6 |
 
-
 ## Duplicates
 
 | Check | Count |
 |---|---|
 | Identical rows | 0 |
 | Repeated Complaint ID | 0 |
-| Repeated description | 27 | 
+| Repeated description | 27 |
 
 ## Raw labels
 

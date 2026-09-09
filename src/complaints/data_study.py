@@ -2,7 +2,7 @@
 
 Run with: uv run python -m complaints.data_study
 
-Writes project-rebuild/reports/data_study/audit.json and reports/data_study/study.md, and
+Writes reports/data_study/audit.json and reports/data_study/study.md, and
 prints the markdown so the findings can be read straight from the terminal.
 """
 
