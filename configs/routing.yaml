@@ -1,0 +1,14 @@
+# Where each predicted class is forwarded. Addresses are demo values; replace with real ones.
+# Every class the model can return must have an entry, otherwise serving fails at load.
+
+destinations:
+  Bank account: deposits-team@bank.example
+  Credit card: cards-team@bank.example
+  Credit reporting: credit-reporting-team@bank.example
+  Debt collection: collections-team@bank.example
+  Loan: lending-team@bank.example
+  Mortgage: mortgage-team@bank.example
+  Student loan: student-loans-team@bank.example
+
+# Complaints under the review threshold go here instead of a department.
+review_queue: complaints-review@bank.example

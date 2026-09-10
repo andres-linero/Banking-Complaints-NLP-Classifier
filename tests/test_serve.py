@@ -88,6 +88,43 @@ def test_serving_config_requires_threshold(tmp_path) -> None:
         load_serving_config(path)
 
 
+def test_routing_config_requires_every_class(tmp_path) -> None:
+    from complaints.config import load_routing_config
+
+    path = tmp_path / "routing.yaml"
+    path.write_text("destinations:\n  Mortgage: m@x\nreview_queue: r@x\n")
+
+    assert load_routing_config(path, classes=["Mortgage"])["destinations"] == {"Mortgage": "m@x"}
+    with pytest.raises(ValueError, match="no destination for: \\['Credit card'\\]"):
+        load_routing_config(path, classes=["Mortgage", "Credit card"])
+
+
+def test_real_routing_yaml_covers_the_seven_classes() -> None:
+    from complaints.config import load_routing_config
+
+    routing = load_routing_config()
+    assert set(routing["destinations"]) == {
+        "Bank account",
+        "Credit card",
+        "Credit reporting",
+        "Debt collection",
+        "Loan",
+        "Mortgage",
+        "Student loan",
+    }
+    assert "@" in routing["review_queue"]
+
+
+def test_prediction_carries_a_destination(small_predictor) -> None:
+    result = small_predictor.predict("mortgage escrow home loan servicer")
+    expected = (
+        small_predictor.routing["review_queue"]
+        if result.needs_review
+        else small_predictor.routing["destinations"][result.product]
+    )
+    assert result.destination == expected
+
+
 def test_real_serving_yaml_threshold_is_075() -> None:
     assert load_serving_config()["review_threshold"] == 0.75
 
@@ -104,7 +141,7 @@ def test_api_predict_and_health(served) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["product"] == "Credit card"
-    assert set(body) == {"product", "confidence", "needs_review", "probabilities"}
+    assert set(body) == {"product", "confidence", "needs_review", "probabilities", "destination"}
 
 
 def test_api_rejects_empty_and_oversized_text(served) -> None:
@@ -120,6 +157,7 @@ def test_mcp_tools_use_the_predictor(served) -> None:
 
     products = mcp_server.list_products()
     assert products["products"] == ["Credit card", "Mortgage"]
+    assert set(products["destinations"]) == {"Credit card", "Mortgage"}
     assert products["review_threshold"] == 0.75
 
     with pytest.raises(ValueError, match="empty"):

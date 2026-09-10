@@ -20,8 +20,9 @@ def predictor():
 
 
 def render_prediction(result: Prediction, threshold: float) -> None:
-    left, right = st.columns([2, 1])
+    left, middle, right = st.columns([2, 2, 1])
     left.metric("Product team", result.product)
+    middle.metric("Forward to", result.destination)
     right.metric("Confidence", f"{result.confidence:.0%}")
 
     if result.needs_review:
@@ -87,7 +88,10 @@ def inbox_page() -> None:
                 mark = "correct" if r.correct else f"wrong, should be {r.email.true_product}"
                 header = f"{r.email.subject}  ·  {r.prediction.confidence:.0%}  ·  {mark}"
                 with st.expander(header):
-                    st.write(f"**From** {r.email.sender}  ·  **Received** {r.email.received_at}")
+                    st.write(
+                        f"**From** {r.email.sender}  ·  **Received** {r.email.received_at}  ·  "
+                        f"**Forward to** {r.prediction.destination}"
+                    )
                     st.write(r.email.body)
                     st.caption(
                         f"Predicted {r.prediction.product} at {r.prediction.confidence:.0%}. "
@@ -106,8 +110,11 @@ def main() -> None:
     with st.sidebar:
         st.subheader("Model")
         st.write(f"**{model.model_name}** · review threshold {model.review_threshold:.2f}")
-        st.write("Classes:")
-        st.write("\n".join(f"- {c}" for c in model.classes))
+        st.write("Routing:")
+        st.write(
+            "\n".join(f"- {c}: {model.routing['destinations'][c]}" for c in model.classes)
+            + f"\n- Needs a person: {model.routing['review_queue']}"
+        )
 
     pages = [
         st.Page(classify_page, title="Classify", default=True),

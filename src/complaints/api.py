@@ -33,6 +33,7 @@ class PredictionOut(BaseModel):
     confidence: float
     needs_review: bool
     probabilities: dict[str, float]
+    destination: str
 
 
 @asynccontextmanager
@@ -52,6 +53,8 @@ def health() -> dict:
         "model": predictor.model_name,
         "review_threshold": predictor.review_threshold,
         "classes": predictor.classes,
+        "destinations": predictor.routing["destinations"],
+        "review_queue": predictor.routing["review_queue"],
     }
 
 
