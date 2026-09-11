@@ -57,6 +57,7 @@ Baseline model, scored once on the 1,388 complaints it never saw.
 | Accuracy | 0.825 | Share of test complaints routed to the right class |
 | Macro F1 | 0.806 | Every class counts the same, big or small |
 | Threshold 0.55 | 71% routed at 90.7% accuracy | The point where automatic routing hits 90% |
+| Threshold 0.75 | 44% routed at 95.0% accuracy | The setting in `serving.yaml`; the rest go to a person |
 | Weakest class | Loan, F1 0.68 | 32 test rows, spills into four other classes |
 
 <p>
@@ -78,13 +79,13 @@ Each stage is one module under `src/complaints/`, runnable on its own, with a
 
 | Stage | Module | Reads | Writes |
 | --- | --- | --- | --- |
-| 1 · Ingest | `ingest.py` | `complaints_banking_2023.csv` | Nothing. Library used by the next two stages |
+| 1 · Ingest | `ingest.py` | `data/raw/complaints_banking_2023.csv` | Nothing. Library used by the next two stages |
 | 1 · Data study | `data_study.py` | Raw CSV | `reports/data_study/audit.json`, `study.md` |
 | 2 · Clean | `clean.py` | Raw CSV, `configs/labels.yaml` | `data/processed/clean.parquet`, `reports/cleaning/report.json` |
 | 3 · Split | `split.py` | `clean.parquet` | `train.parquet`, `test.parquet`, `reports/split/` |
 | 4 · Train | `train.py` | `train.parquet`, `configs/baseline.yaml` | `models/baseline.joblib`, `reports/train/baseline.json`, MLflow run |
 | 5 · Evaluate | `evaluate.py` | `test.parquet`, `models/baseline.joblib` | `reports/evaluate/baseline.json`, `worst_mistakes.csv`, `figures/` |
-| 6 · Serve | `predictor.py` | `models/baseline.joblib`, `configs/serving.yaml` | Nothing. Returns product, confidence, needs_review |
+| 6 · Serve | `predictor.py`, `inbox.py` (demo) | `models/baseline.joblib`, `configs/serving.yaml` | Nothing. Returns product, confidence, needs_review |
 
 Two more modules support the stages. `config.py` resolves paths and loads the label map, and
 `vectorize.py` builds the TF-IDF step from `configs/baseline.yaml`.
@@ -133,7 +134,7 @@ needs a person. The doors are thin wrappers around it and hold no logic of their
 | Audience | Door | Command |
 | --- | --- | --- |
 | Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload` |
-| People | Streamlit page | `uv run streamlit run src/complaints/app.py` |
+| People | Streamlit app, workflow demo and Inbox pages | `uv run streamlit run frontend/app.py` |
 | AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
 
 ```bash
@@ -145,14 +146,29 @@ curl -X POST http://127.0.0.1:8000/predict \
 ```json
 {
   "product": "Bank account",
-  "confidence": 0.71,
+  "confidence": 0.3496,
   "needs_review": true,
-  "probabilities": {"Bank account": 0.71, "Credit card": 0.17, "...": "..."}
+  "probabilities": {
+    "Bank account": 0.3496,
+    "Credit card": 0.1787,
+    "Mortgage": 0.1433,
+    "...": "..."
+  }
 }
 ```
 
-The review threshold lives in `configs/serving.yaml`. Change it there and every door moves
-together. The example response above uses illustrative numbers.
+The review threshold lives in `configs/serving.yaml`, currently 0.75. Change it there and every
+door moves together. The response above is the real output of the saved model for that text.
+
+### Demo: the inbox
+
+The model only understands banking complaints, so the demo feeds it banking complaints. The
+Streamlit app has an **Inbox** page: a synthetic mailbox where every email is a real complaint
+from the frozen test set, wrapped in an invented sender, subject, and date. Each email is routed
+to a department folder, or to **Needs a person** when the confidence is under the threshold, and
+marked correct or wrong against its true label. The same mailbox is served by the API as a fake
+mail source: `GET /inbox?n=20&seed=42` returns the emails, `GET /inbox/next` hands out one at a
+time. The generator lives in `inbox.py` and never touches the model.
 
 ## Development
 
@@ -179,6 +195,7 @@ Reproducibility notes:
 
 ```text
 src/complaints/              one module per stage, plus the serving doors
+frontend/app.py              the Streamlit app, the people-facing door
 configs/                     runtime.yaml, labels.yaml, baseline.yaml, serving.yaml
 tests/                       tests for every stage
 reports/                     committed outputs of every stage

@@ -8,6 +8,8 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[2]  # src/complaints/config.py -> repo root
 RUNTIME_CONFIG_PATH = PROJECT_ROOT / "configs" / "runtime.yaml"
 SERVING_CONFIG_PATH = PROJECT_ROOT / "configs" / "serving.yaml"
+ROUTING_CONFIG_PATH = PROJECT_ROOT / "configs" / "routing.yaml"
+ROUTING_CONFIG_PATH = PROJECT_ROOT / "configs" / "routing.yaml"
 
 TEXT_COLUMN = "Complaint Description"
 TARGET_COLUMN = "Banking Product"
@@ -83,3 +85,22 @@ def load_serving_config(path: str | Path = SERVING_CONFIG_PATH) -> dict:
         "review_threshold": threshold,
         "max_text_chars": int(raw.get("max_text_chars", 20000)),
     }
+
+
+def load_routing_config(
+    path: str | Path = ROUTING_CONFIG_PATH, classes: list[str] | None = None
+) -> dict:
+    """Read routing.yaml: one destination address per class, plus the review queue.
+
+    When `classes` is given, every one of them must have a destination, so a class the
+    model can return never ends up without a mailbox.
+    """
+    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(raw, dict) or "destinations" not in raw or "review_queue" not in raw:
+        raise ValueError(f"Routing config {path} must set destinations and review_queue")
+    destinations = {str(k): str(v) for k, v in raw["destinations"].items()}
+    if classes is not None:
+        missing = sorted(set(classes) - set(destinations))
+        if missing:
+            raise ValueError(f"routing.yaml has no destination for: {missing}")
+    return {"destinations": destinations, "review_queue": str(raw["review_queue"])}

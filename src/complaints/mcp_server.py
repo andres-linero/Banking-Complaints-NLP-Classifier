@@ -16,9 +16,9 @@ from complaints.predictor import get_predictor
 def classify_complaint(text: str) -> dict:
     """Route a banking complaint to a product team from its text.
 
-    Returns the predicted product, the model's confidence, and needs_review,
-    which is true when the confidence is below the serving threshold and a
-    person should decide instead.
+    Returns the predicted product, the model's confidence, needs_review (true when
+    the confidence is below the serving threshold and a person should decide), and
+    destination, the mailbox the complaint is forwarded to.
     """
     if not text or not text.strip():
         raise ValueError("text is empty")
@@ -26,11 +26,13 @@ def classify_complaint(text: str) -> dict:
 
 
 def list_products() -> dict:
-    """The product classes the classifier can return, and the review threshold in use."""
+    """The product classes, the mailbox each one forwards to, and the review threshold."""
     predictor = get_predictor()
     return {
         "model": predictor.model_name,
         "products": predictor.classes,
+        "destinations": predictor.routing["destinations"],
+        "review_queue": predictor.routing["review_queue"],
         "review_threshold": predictor.review_threshold,
     }
 
