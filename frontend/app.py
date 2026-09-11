@@ -354,7 +354,8 @@ def inbox_v2_page() -> None:
 
     lo = (state.inbox_page - 1) * PAGE_SIZE
     hi = min(lo + PAGE_SIZE, len(shown))
-    page_label = f"Emails {lo + 1 if shown else 0}–{hi} of {len(shown):,} · page {state.inbox_page} of {pages}"
+    first = lo + 1 if shown else 0
+    page_label = f"Emails {first}–{hi} of {len(shown):,} · page {state.inbox_page} of {pages}"
     st.caption(page_label + " · use Previous and Next under the table to see the rest")
     view = shown[lo:hi]
 
