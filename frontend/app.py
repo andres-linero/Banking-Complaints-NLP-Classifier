@@ -354,6 +354,8 @@ def inbox_v2_page() -> None:
 
     lo = (state.inbox_page - 1) * PAGE_SIZE
     hi = min(lo + PAGE_SIZE, len(shown))
+    page_label = f"Emails {lo + 1 if shown else 0}–{hi} of {len(shown):,} · page {state.inbox_page} of {pages}"
+    st.caption(page_label + " · use Previous and Next under the table to see the rest")
     view = shown[lo:hi]
 
     table = pd.DataFrame(
@@ -405,9 +407,7 @@ def inbox_v2_page() -> None:
         state.inbox_page += 1
         st.rerun()
     label_col.markdown(
-        f'<div style="text-align:center;color:#64748b;font-size:13px;">'
-        f"Emails {lo + 1 if shown else 0}–{hi} of {len(shown):,} · page {state.inbox_page} of "
-        f"{pages}</div>",
+        f'<div style="text-align:center;color:#64748b;font-size:13px;">{page_label}</div>',
         unsafe_allow_html=True,
     )
 
