@@ -1,6 +1,6 @@
-# Use case: routing a bank complaints inbox
+# DEMO
 
-[Back to training and evaluation](../README.md)
+[Back to training and evaluation](README.md)
 
 A bank's shared complaints inbox receives messages about seven product areas. This demo uses
 the trained classifier to select a team mailbox from each complaint's text, or send uncertain
@@ -9,8 +9,8 @@ workflow, with true test labels available to check its decisions.
 
 ## Before you start
 
-Run every command in this guide from the **repo root**, not from `docs/`. Follow the
-[training quick start](../README.md#quick-start) first to install dependencies and produce
+Run every command in this guide from the **repo root**. Follow the
+[training quick start](README.md#quick-start) first to install dependencies and produce
 `models/baseline.joblib` and `data/processed/test.parquet`. The app loads the saved model;
 it does not train a new one.
 
@@ -69,8 +69,8 @@ does not require the FastAPI server.
 
 <!-- Screenshots pending from Andres. Add these files under docs/, then uncomment this block.
 <p>
-  <img src="demo-workflow.png" width="48%" alt="Bank email workflow demo with scoreboard, compose window, and routed email cards">
-  <img src="demo-inbox.png" width="48%" alt="Inbox with test-set metrics, folder filter, and paginated emails">
+  <img src="docs/demo-workflow.png" width="48%" alt="Bank email workflow demo with scoreboard, compose window, and routed email cards">
+  <img src="docs/demo-inbox.png" width="48%" alt="Inbox with test-set metrics, folder filter, and paginated emails">
 </p>
 -->
 

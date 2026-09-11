@@ -12,14 +12,14 @@ the training rows, and measures accuracy and routing confidence on held-out comp
 
 This project ships the routing model and a demo showing it at work on an inbox. This README
 covers the training pipeline, results, and reproducibility. The
-[bank inbox use-case guide](docs/inbox-use-case.md) covers the demo and serving interfaces.
+[DEMO](DEMO.md) covers the demo and serving interfaces.
 
 **Contents:**
 [How it works](#how-it-works) ·
 [Results](#results) ·
 [Stages and files](#stages-and-files) ·
 [Quick start](#quick-start) ·
-[Inbox use case](docs/inbox-use-case.md) ·
+[DEMO](DEMO.md) ·
 [Development](#development) ·
 [Project layout](#project-layout)
 
@@ -104,7 +104,7 @@ Two more modules support the stages. `config.py` resolves paths and loads the la
 Five YAML files under `configs/` hold the settings: `runtime.yaml` for paths, `labels.yaml`
 for the label map, `baseline.yaml` for model settings, `serving.yaml` for the model name and
 review threshold and input-length limit, and `routing.yaml` for one team mailbox per class plus a review queue.
-See the [routing configuration](docs/inbox-use-case.md#routing-configuration) for how serving
+See the [routing configuration](DEMO.md#routing-configuration) for how serving
 selects a destination mailbox.
 
 ## Quick start
@@ -142,14 +142,6 @@ To browse the runs:
 ```bash
 uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 ```
-
-## Use case: bank email routing
-
-The saved model also powers a two-page Streamlit demo at `frontend/app.py`: send individual
-complaints through an email workflow, or explore the frozen test set as a routed inbox.
-
-See the **[bank inbox use-case guide](docs/inbox-use-case.md)** for the demo walkthrough,
-launch command, mailbox configuration, API example, and local-demo limits.
 
 ## Development
 
@@ -189,7 +181,7 @@ data/processed/              parquet files, git-ignored
 models/  mlruns/             saved model and MLflow runs, git-ignored
 notebooks/                   original exploration notebook
 docs/pipeline.svg            the training map above
-docs/inbox-use-case.md       demo walkthrough, routing configuration, API, and limits
+DEMO.md                     demo walkthrough, routing configuration, API, and limits
 pyproject.toml               metadata and dependency groups
 uv.lock                      pinned lockfile used by uv sync
 .github/workflows/ci.yml     lint and test workflow
