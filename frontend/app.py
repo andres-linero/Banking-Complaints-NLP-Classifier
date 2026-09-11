@@ -400,17 +400,13 @@ def inbox_v2_page() -> None:
         },
     )
 
-    prev_col, label_col, next_col = st.columns([1, 6, 1], vertical_alignment="center")
+    prev_col, _, next_col = st.columns([1, 6, 1], vertical_alignment="center")
     if prev_col.button("Previous", disabled=state.inbox_page <= 1, width="stretch"):
         state.inbox_page -= 1
         st.rerun()
     if next_col.button("Next", disabled=state.inbox_page >= pages, width="stretch"):
         state.inbox_page += 1
         st.rerun()
-    label_col.markdown(
-        f'<div style="text-align:center;color:#64748b;font-size:13px;">{page_label}</div>',
-        unsafe_allow_html=True,
-    )
 
     choice = st.selectbox(
         "Open an email from this page",
