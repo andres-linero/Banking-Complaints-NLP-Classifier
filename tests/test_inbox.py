@@ -94,3 +94,24 @@ def test_api_inbox_endpoints(test_parquet, monkeypatch) -> None:
     second = client.get("/inbox/next").json()
     assert first["id"] != second["id"]
     assert client.get("/inbox", params={"n": 0}).status_code == 422
+
+
+def test_frontend_escapes_html_in_email_fields() -> None:
+    import importlib.util
+    from pathlib import Path
+
+    from complaints.live import handle_text
+
+    spec = importlib.util.spec_from_file_location("frontend_app", Path("frontend/app.py"))
+    app = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(app)
+
+    predictor = Predictor(
+        build_pipeline(CONFIG).fit(_frame()["text"], _frame()["product"]), review_threshold=0.5
+    )
+    record = handle_text("<img src=x onerror=alert(1)> credit card charge", predictor)
+    record = record.__class__(**{**record.__dict__, "sender": "<script>alert(1)</script>"})
+
+    rendered = app._record_header_html(record)
+    assert "<script>" not in rendered and "&lt;script&gt;" in rendered
+    assert "<img" not in app._department_card_html("<img>", "<b>x</b>")
