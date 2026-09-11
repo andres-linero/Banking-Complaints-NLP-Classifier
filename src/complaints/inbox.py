@@ -66,14 +66,19 @@ def make_subject(body: str, words: int = SUBJECT_WORDS) -> str:
 
 
 def make_inbox(
-    n: int = 20,
+    n: int | None = 20,
     seed: int = 42,
     test_path: str | Path | None = None,
     now: datetime | None = None,
 ) -> list[Email]:
-    """Sample n test complaints and dress each one as an email. Deterministic per seed."""
+    """Sample n test complaints (all of them when n is None) and dress each as an email.
+
+    Deterministic per seed, so the same inbox comes back on every run."""
     path = Path(test_path) if test_path else load_runtime_config(RUNTIME_CONFIG_PATH).test_data_path
-    rows = pd.read_parquet(path).sample(n=n, random_state=seed).reset_index(drop=True)
+    frame = pd.read_parquet(path)
+    if n is None:
+        n = len(frame)
+    rows = frame.sample(n=n, random_state=seed).reset_index(drop=True)
     rng = random.Random(seed)
     now = now or datetime.now().replace(microsecond=0)
 

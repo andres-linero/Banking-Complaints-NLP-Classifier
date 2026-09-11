@@ -134,7 +134,7 @@ needs a person. The doors are thin wrappers around it and hold no logic of their
 | Audience | Door | Command |
 | --- | --- | --- |
 | Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload` |
-| People | Streamlit app, Classify and Inbox pages | `uv run streamlit run src/complaints/app.py` |
+| People | Streamlit app, workflow demo and Inbox pages | `uv run streamlit run frontend/app.py` |
 | AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
 
 ```bash
@@ -195,6 +195,7 @@ Reproducibility notes:
 
 ```text
 src/complaints/              one module per stage, plus the serving doors
+frontend/app.py              the Streamlit app, the people-facing door
 configs/                     runtime.yaml, labels.yaml, baseline.yaml, serving.yaml
 tests/                       tests for every stage
 reports/                     committed outputs of every stage

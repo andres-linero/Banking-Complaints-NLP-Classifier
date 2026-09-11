@@ -61,6 +61,12 @@ def test_make_inbox_is_deterministic_and_carries_the_true_label(test_parquet) ->
     assert [e.received_at for e in first] == sorted((e.received_at for e in first), reverse=True)
 
 
+def test_make_inbox_none_means_every_row(test_parquet) -> None:
+    emails = make_inbox(n=None, seed=1, test_path=test_parquet)
+    assert len(emails) == 24
+    assert len({e.id for e in emails}) == 24
+
+
 def test_route_inbox_sets_folder_and_correct_flag(test_parquet, small_predictor) -> None:
     routed = route_inbox(make_inbox(n=8, seed=3, test_path=test_parquet), small_predictor)
 
