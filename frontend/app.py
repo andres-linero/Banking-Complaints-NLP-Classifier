@@ -7,12 +7,14 @@ Run with: uv run streamlit run frontend/app.py
 
 from __future__ import annotations
 
+import html
 import time
 from datetime import datetime
 
 import pandas as pd
 import streamlit as st
 
+from complaints.config import load_serving_config
 from complaints.inbox import REVIEW_FOLDER, Email, make_inbox, make_subject, route_inbox, summarize
 from complaints.live import RunRecord, handle_email, handle_text, scoreboard
 from complaints.predictor import get_predictor
@@ -33,6 +35,7 @@ TEAM_COLORS = {
 INBOX_SEED = 42
 INBOX_SIZE = 100
 PAGE_SIZE = 25  # emails per page in the Inbox table
+MAX_TEXT_CHARS = load_serving_config()["max_text_chars"]  # same cap as the API
 
 
 @st.cache_resource
@@ -51,9 +54,9 @@ def _department_card_html(name: str, address: str) -> str:
     return (
         '<div style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;'
         f'background:#ffffff;border-left:5px solid {color};">'
-        f'<div style="font-size:13px;font-weight:600;color:#0f172a;">{name}</div>'
+        f'<div style="font-size:13px;font-weight:600;color:#0f172a;">{html.escape(name)}</div>'
         f'<div style="font-size:11px;color:#94a3b8;font-family:ui-monospace,Menlo,monospace;'
-        f'word-break:break-all;margin-top:2px;">{address}</div>'
+        f'word-break:break-all;margin-top:2px;">{html.escape(address)}</div>'
         "</div>"
     )
 
@@ -82,7 +85,7 @@ def _class_tag_html(name: str) -> str:
         '<div style="display:flex;align-items:center;gap:8px;margin:4px 0 10px 0;'
         'font-size:12px;color:#64748b;">Class in the test set:'
         f'<span style="display:inline-block;padding:2px 10px;border-radius:12px;border:1px solid '
-        f'{color};color:{color};font-weight:600;">{name}</span></div>'
+        f'{color};color:{color};font-weight:600;">{html.escape(name)}</span></div>'
     )
 
 
@@ -110,19 +113,19 @@ def _record_header_html(record: RunRecord) -> str:
         guess = (
             f'<span style="font-size:12px;color:#64748b;">model guess</span>'
             f'<span style="padding:2px 8px;border-radius:10px;border:1px dashed {guess_color};'
-            f'color:{guess_color};font-size:11px;">{p.product}</span>'
+            f'color:{guess_color};font-size:11px;">{html.escape(p.product)}</span>'
         )
     return (
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;'
         f'padding:8px 12px;border-left:5px solid {color};background:#ffffff;">'
         '<div style="min-width:0;">'
         f'<div style="font-size:13px;font-weight:600;color:#0f172a;">'
-        f"Email from {record.sender}</div>"
+        f"Email from {html.escape(record.sender)}</div>"
         "</div>"
         '<div style="display:flex;align-items:center;gap:10px;white-space:nowrap;">'
         f'<span style="font-size:12px;color:#64748b;">Routed to</span>'
         f'<span style="padding:3px 10px;border-radius:12px;border:1.5px solid {color};'
-        f'color:{color};font-weight:600;font-size:12px;">{department}</span>'
+        f'color:{color};font-weight:600;font-size:12px;">{html.escape(department)}</span>'
         f"{guess}"
         f'<span style="font-size:12px;color:#64748b;">Confidence</span>'
         f'<span style="font-size:14px;font-weight:600;color:#0f172a;">{p.confidence:.0%}</span>'
@@ -224,12 +227,15 @@ def live_page() -> None:
                 '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">The model decides which '
                 "team mailbox this is forwarded to.</div>"
             )
-            st.text_input("From", key="compose_from", placeholder="you@example.com")
-            st.text_input("Subject", key="compose_subject", placeholder="What is this about?")
+            st.text_input("From", key="compose_from", placeholder="you@example.com", max_chars=200)
+            st.text_input(
+                "Subject", key="compose_subject", placeholder="What is this about?", max_chars=300
+            )
             st.text_area(
                 "Message",
                 key="compose_body",
                 height=180,
+                max_chars=MAX_TEXT_CHARS,
                 placeholder="Describe the complaint, or paste one from the test set above.",
             )
             send_col, clear_col = st.columns([3, 1], vertical_alignment="bottom")
@@ -418,16 +424,20 @@ def inbox_v2_page() -> None:
     if choice is not None:
         r = view[choice]
         color = TEAM_COLORS.get(r.folder, "#64748b")
+        e = {k: html.escape(str(v)) for k, v in r.email.to_dict().items()}
+        product = html.escape(r.prediction.product)
+        destination = html.escape(r.prediction.destination)
+        when = e["received_at"].replace("T", " ")
         st.html(
             f'<div style="padding:12px 16px;border:1px solid #e2e8f0;border-left:5px solid {color};'
             'border-radius:8px;background:#ffffff;">'
-            f'<div style="font-size:16px;font-weight:600;color:#0f172a;">{r.email.subject}</div>'
-            f'<div style="font-size:12px;color:#64748b;margin-top:2px;">From {r.email.sender} · '
-            f"{r.email.received_at.replace('T', ' ')} · complaint {r.email.id}</div>"
-            f'<div style="font-size:13px;color:#0f172a;margin-top:10px;">{r.email.body}</div>'
+            f'<div style="font-size:16px;font-weight:600;color:#0f172a;">{e["subject"]}</div>'
+            f'<div style="font-size:12px;color:#64748b;margin-top:2px;">From {e["sender"]} · '
+            f"{when} · complaint {e['id']}</div>"
+            f'<div style="font-size:13px;color:#0f172a;margin-top:10px;">{e["body"]}</div>'
             f'<div style="font-size:12px;color:#475569;margin-top:10px;">Predicted '
-            f"<b>{r.prediction.product}</b> at {r.prediction.confidence:.0%} · forwarded to "
-            f"{r.prediction.destination} · true label <b>{r.email.true_product}</b> · "
+            f"<b>{product}</b> at {r.prediction.confidence:.0%} · forwarded to "
+            f"{destination} · true label <b>{e['true_product']}</b> · "
             f"{'correct' if r.correct else 'wrong'}</div></div>"
         )
 

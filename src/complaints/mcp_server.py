@@ -10,6 +10,7 @@ Tools:
 
 from __future__ import annotations
 
+from complaints.config import load_serving_config
 from complaints.predictor import get_predictor
 
 
@@ -22,6 +23,9 @@ def classify_complaint(text: str) -> dict:
     """
     if not text or not text.strip():
         raise ValueError("text is empty")
+    limit = load_serving_config()["max_text_chars"]
+    if len(text) > limit:
+        raise ValueError(f"text longer than {limit} characters")
     return get_predictor().predict(text).to_dict()
 
 

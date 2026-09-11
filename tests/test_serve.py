@@ -162,6 +162,8 @@ def test_mcp_tools_use_the_predictor(served) -> None:
 
     with pytest.raises(ValueError, match="empty"):
         mcp_server.classify_complaint("  ")
+    with pytest.raises(ValueError, match="longer than"):
+        mcp_server.classify_complaint("x" * 20001)
 
 
 def test_mcp_server_registers_both_tools() -> None:

@@ -21,7 +21,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "httpx2>=2.12.0",
-    "pytest>=8.0,<9.0",
+    "pytest>=9.0.3,<10.0",
     "ruff>=0.4,<1.0",
 ]
 # Only for opening the historical notebook under notebooks/: uv sync --group notebook
