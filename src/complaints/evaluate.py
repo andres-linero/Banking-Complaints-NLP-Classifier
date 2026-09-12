@@ -7,8 +7,8 @@ Loads the fitted pipeline, predicts every row of test.parquet, and writes:
                                           matrix, threshold sweep, calibration
     reports/evaluate/worst_mistakes.csv   confident wrong predictions to read
     reports/evaluate/figures/*.png        confusion matrix, per-class F1,
-                                          learning curve, threshold curve,
-                                          calibration curve
+                                          class map, learning curve,
+                                          threshold curve, calibration curve
 The test metrics are also attached to the model's MLflow run.
 """
 
@@ -23,6 +23,8 @@ import joblib
 import matplotlib
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import TruncatedSVD
+from sklearn.manifold import TSNE
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -43,6 +45,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 THRESHOLDS = [round(t, 2) for t in np.arange(0.0, 0.96, 0.05)]
 TARGET_ROUTED_ACCURACY = 0.90
 LEARNING_CURVE_SIZES = [0.1, 0.25, 0.5, 0.75, 1.0]
+CLASS_MAP_COMPONENTS = 50
+CLASS_MAP_SEED = 42
 
 # Chart tokens: light surface, ink for text, one blue ramp for magnitude,
 # blue + orange for the two-series learning and threshold curves.
@@ -52,6 +56,17 @@ INK_SOFT = "#52514e"
 GRID = "#e6e5e1"
 BLUE = "#2a78d6"
 ORANGE = "#eb6834"
+# One fixed colour per class, shared with the demo app so a class looks the same everywhere.
+CLASS_COLORS = {
+    "Bank account": "#2a78d6",
+    "Credit card": "#eb6834",
+    "Credit reporting": "#1baf7a",
+    "Debt collection": "#eda100",
+    "Loan": "#e87ba4",
+    "Mortgage": "#008300",
+    "Student loan": "#4a3aa7",
+}
+FALLBACK_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7"]
 BLUE_RAMP = ["#ffffff", "#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 
 
@@ -169,6 +184,27 @@ def compute_learning_curve(config: dict, train_df: pd.DataFrame, folds: int = 5)
     }
 
 
+def compute_class_map(pipeline, train_df: pd.DataFrame) -> pd.DataFrame:
+    """Place every training complaint on a 2-D map from its TF-IDF vector.
+
+    The fitted vectorizer inside the saved pipeline turns the text into the same 50k-term
+    vectors the classifier sees. TruncatedSVD squeezes those to 50 dense numbers, then t-SNE
+    lays them out in two dimensions so that complaints using similar words land near each
+    other. Nothing here is a prediction; it is a picture of the training data as the model
+    sees it. Returns one row per complaint with x, y, and the true class.
+    """
+    texts, labels = train_df[CLEAN_TEXT_COLUMN], train_df[CLASS_COLUMN].to_numpy()
+    vectors = pipeline.named_steps["vectorize"].transform(texts)
+    n_rows, n_terms = vectors.shape
+    components = max(2, min(CLASS_MAP_COMPONENTS, n_rows - 1, n_terms - 1))
+    dense = TruncatedSVD(components, random_state=CLASS_MAP_SEED).fit_transform(vectors)
+    perplexity = max(2.0, min(40.0, (n_rows - 1) / 3))
+    points = TSNE(
+        n_components=2, init="pca", perplexity=perplexity, random_state=CLASS_MAP_SEED
+    ).fit_transform(dense)
+    return pd.DataFrame({"x": points[:, 0], "y": points[:, 1], CLASS_COLUMN: labels})
+
+
 # ----- figures -------------------------------------------------------------
 
 
@@ -275,6 +311,66 @@ def plot_learning_curve(curve: dict, path: Path) -> str:
         loc="left",
         color=INK,
         fontsize=11,
+    )
+    return _save(fig, path)
+
+
+def plot_class_map(points: pd.DataFrame, path: Path) -> str:
+    """Scatter of the training complaints, one dot each, coloured by true class."""
+    fig, ax = plt.subplots(figsize=(7.5, 6.6), dpi=150)
+    fig.patch.set_facecolor(SURFACE)
+    ax.set_facecolor(SURFACE)
+    classes = sorted(points[CLASS_COLUMN].unique())
+    for i, cls in enumerate(classes):
+        color = CLASS_COLORS.get(cls, FALLBACK_COLORS[i % len(FALLBACK_COLORS)])
+        part = points[points[CLASS_COLUMN] == cls]
+        ax.scatter(
+            part["x"],
+            part["y"],
+            s=6,
+            c=color,
+            alpha=0.65,
+            linewidths=0,
+            label=f"{cls} ({len(part):,})",
+        )
+    for cls in classes:
+        part = points[points[CLASS_COLUMN] == cls]
+        ax.text(
+            part["x"].median(),
+            part["y"].median(),
+            cls,
+            fontsize=9,
+            fontweight="bold",
+            ha="center",
+            va="center",
+            color=INK,
+            bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.85),
+        )
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.set_title(
+        f"Class map: {len(points):,} training complaints, one dot each",
+        loc="left",
+        color=INK,
+        fontsize=11,
+    )
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.01),
+        ncol=4,
+        fontsize=8,
+        frameon=False,
+        markerscale=2.5,
+    )
+    fig.text(
+        0.01,
+        0.005,
+        "TF-IDF vectors squeezed to 2-D with t-SNE. Nearby dots use similar words; "
+        "a class with its own island is easy to route.",
+        fontsize=7.5,
+        color=INK_SOFT,
     )
     return _save(fig, path)
 
@@ -386,6 +482,7 @@ def main() -> None:
     parser.add_argument(
         "--no-learning-curve", action="store_true", help="skip the slow learning curve"
     )
+    parser.add_argument("--no-class-map", action="store_true", help="skip the t-SNE class map")
     parser.add_argument("--no-mlflow", action="store_true")
     args = parser.parse_args()
 
@@ -406,8 +503,15 @@ def main() -> None:
         plot_threshold_curve(result["thresholds"], figures_dir / "threshold_curve.png"),
         plot_calibration(result["calibration"], figures_dir / "calibration.png"),
     ]
-    if not args.no_learning_curve:
+    train_df = None
+    if not args.no_class_map:
         train_df = pd.read_parquet(args.train_path or runtime.train_data_path)
+        figures.append(
+            plot_class_map(compute_class_map(pipeline, train_df), figures_dir / "class_map.png")
+        )
+    if not args.no_learning_curve:
+        if train_df is None:
+            train_df = pd.read_parquet(args.train_path or runtime.train_data_path)
         result["learning_curve"] = compute_learning_curve(
             load_model_config(args.model_config), train_df
         )

@@ -39,25 +39,25 @@ the train rows, scores it on the test rows exactly once, and serves it.
 
 Baseline model, scored once on the 1,388 complaints it never saw.
 
-| Metric | Value | Note |
-| --- | --- | --- |
-| Accuracy | 0.825 | Share of all test complaints classified correctly, including those flagged for review |
-| Macro F1 | 0.806 | Every class counts the same, big or small |
-| Threshold 0.55 | 71% routed at 90.7% accuracy | The point where automatic routing hits 90% |
-| Threshold 0.75 | 44% routed at 95.0% accuracy | The setting in `serving.yaml`; the rest go to a person |
-| Weakest class | Loan, F1 0.68 | 32 test rows, spills into four other classes |
+| Metric | Value |
+| --- | --- |
+| Accuracy | 0.825 |
+| Macro F1 | 0.806 |
+| Threshold 0.55 | 71% routed at 90.7% accuracy |
+| Threshold 0.75 | 44% routed at 95.0% accuracy |
 
 <p>
   <img src="reports/evaluate/figures/confusion_matrix.png" width="48%" alt="Confusion matrix on the test set">
-  <img src="reports/evaluate/figures/threshold_curve.png" width="48%" alt="Coverage and routed accuracy against the confidence threshold">
+  <img src="reports/evaluate/figures/class_map.png" width="48%" alt="Class map: the training complaints laid out in two dimensions and coloured by class">
 </p>
 
-Rows of the confusion matrix are the true class. The two biggest leaks are credit card read as
-bank account, and credit reporting read as credit card. The threshold curve shows the trade: raise
-the cutoff and fewer complaints route automatically, but the ones that do are right more often.
+Rows of the confusion matrix are the true class; the diagonal is what the model got right. The
+class map shows the same story from the training side: each dot is one complaint, placed near
+the complaints that use similar words. Mortgage and Debt collection have their own regions, Bank
+account and Credit card share one, and Loan has no region of its own.
 
-Per-class scores, the full confusion matrix, and the most confident wrong predictions are in
-`reports/evaluate/`.
+Per-class scores, the full confusion matrix, the threshold curve, and the most confident wrong
+predictions are in `reports/evaluate/`.
 
 ## Stages and files
 
@@ -66,16 +66,15 @@ Each stage is one module under `src/complaints/`, runnable on its own, with a
 
 | Stage | Module | Reads | Writes |
 | --- | --- | --- | --- |
-| 1 · Ingest | `ingest.py` | `data/raw/complaints_banking_2023.csv` | Nothing. Library used by the next two stages |
-| 1 · Data study | `data_study.py` | Raw CSV | `reports/data_study/audit.json`, `study.md` |
-| 2 · Clean | `clean.py` | Raw CSV, `configs/labels.yaml` | `data/processed/clean.parquet`, `reports/cleaning/report.json` |
-| 3 · Split | `split.py` | `clean.parquet` | `train.parquet`, `test.parquet`, `reports/split/` |
-| 4 · Train | `train.py` | `train.parquet`, `configs/baseline.yaml` | `models/baseline.joblib`, `reports/train/baseline.json`, MLflow run |
-| 5 · Evaluate | `evaluate.py` | `test.parquet`, `models/baseline.joblib` | `reports/evaluate/baseline.json`, `worst_mistakes.csv`, `figures/` |
-| 6 · Serve | `predictor.py` | `models/baseline.joblib`, `configs/serving.yaml`, `configs/routing.yaml` | Returns product, confidence, needs_review, probabilities, destination |
+| 1 · Ingest | `ingest.py`, `data_study.py` | `data/raw/complaints_banking_2023.csv` | `reports/data_study/audit.json`, `study.md` |
+| 2 · Wrangle | `clean.py` | Raw CSV, `configs/labels.yaml` | `data/processed/clean.parquet`, `reports/cleaning/report.json` |
+| 3 · Freeze | `split.py` | `clean.parquet` | `train.parquet`, `test.parquet`, `reports/split/` |
+| 4 · Vectorize | `vectorize.py` | `configs/baseline.yaml` | The TF-IDF step inside the saved model |
+| 5 · Train | `train.py` | `train.parquet`, `configs/baseline.yaml` | `models/baseline.joblib`, `reports/train/baseline.json`, MLflow run |
+| 6 · Evaluate | `evaluate.py` | `test.parquet`, `train.parquet`, `models/baseline.joblib` | `reports/evaluate/baseline.json`, `worst_mistakes.csv`, `figures/` |
+| 7 · Serve | `predictor.py` | `models/baseline.joblib`, `configs/serving.yaml`, `configs/routing.yaml` | Returns product, confidence, needs_review, probabilities, destination |
 
-Two more modules support the stages. `config.py` resolves paths and loads the label map, and
-`vectorize.py` builds the TF-IDF step from `configs/baseline.yaml`.
+One more module supports the stages: `config.py` resolves paths and loads the YAML files.
 
 Five YAML files under `configs/` hold the settings: `runtime.yaml` for paths, `labels.yaml`
 for the label map, `baseline.yaml` for model settings, `serving.yaml` for the model name and
@@ -99,7 +98,7 @@ uv run python -m complaints.train        # fit the baseline, log to MLflow
 uv run python -m complaints.evaluate     # score the test set once
 ```
 
-Every stage prints what it wrote. Add `--no-learning-curve` to evaluate to skip its slowest figure.
+Every stage prints what it wrote. Add `--no-learning-curve` or `--no-class-map` to evaluate to skip its two slowest figures.
 
 Note:
 
