@@ -9,6 +9,10 @@
 This project ships two things: a routing model for consumer banking complaints and a demo
 showing it at work on an inbox.
 
+The model was trained on 6,900+ real bank complaint comments carrying 17 product labels, merged
+into 7 target classes. TF-IDF turns each complaint into numbers, and a logistic regression
+classifier learns which words point to which product.
+
 A complaint goes in as free text. The model returns one of seven product classes, a confidence
 score, and a destination mailbox. Complaints below a confidence threshold go to a review queue
 for a person. The model and serving code live in `src/complaints/`; the two-page Streamlit demo
