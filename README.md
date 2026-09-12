@@ -35,26 +35,6 @@ the train rows, scores it on the test rows exactly once, and serves it.
 
 <img src="docs/pipeline.svg" alt="Training map: data processing from the raw CSV through ingest, wrangle, and freeze; model path through vectorize, train, evaluate, and serve; the frozen split feeds training and the test rows are read by evaluate only" width="100%">
 
-**How the model is trained**
-
-- **Clean before anything learns.** Anonymised tokens and money masks are collapsed, very short and
-  duplicate complaints are dropped, and 17 raw labels are mapped onto 7 classes from `labels.yaml`.
-- **Split once, then never touch the test rows.** 80 / 20, stratified by class, seed 42. The
-  Complaint ID assignment is written to disk so every model is scored on identical rows.
-- **TF-IDF turns text into numbers.** Each complaint becomes a vector over 50,000 words and word
-  pairs, weighted so common words count less and rare ones count more. Fitted on train rows only.
-- **Logistic regression draws the boundaries.** One weight per term per class. It outputs a
-  probability for each of the 7 classes, and the highest one is the prediction.
-- **Class weights are balanced.** Bank account has 14 times more rows than Loan, so Loan mistakes
-  cost more during training to stop the model ignoring it.
-- **5-fold cross-validation before the final fit.** The train rows are scored five ways to check
-  the settings, then the model is fitted once on all of them and saved.
-- **One confidence threshold.** Evaluate sweeps it on the test set and reports the trade between
-  how many complaints route automatically and how often they are right.
-
-Every run is logged to MLflow with its settings and scores, so a second model trained on the same
-rows can be compared in one table.
-
 ## Results
 
 Baseline model, scored once on the 1,388 complaints it never saw.
