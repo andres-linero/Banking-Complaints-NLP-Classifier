@@ -1,15 +1,26 @@
 # macOS / editor files
 .DS_Store
+Thumbs.db
 .vscode/
 .idea/
 .mcp.json
+.claude/settings.local.json
 
-# Python environments
+# Screenshots dropped into the repo while reviewing the app; never source
+/Screenshot*
+*.png
+!reports/**/*.png
+!docs/**/*.png
+
+# Python environments and secrets
 .venv/
 venv/
 env/
 .env
 .env.*
+.streamlit/secrets.toml
+*.pem
+*.key
 
 # Python caches / build output
 __pycache__/
@@ -31,13 +42,14 @@ htmlcov/
 models/
 mlruns/
 data/processed/
-
+*.joblib
+*.pkl
+*.parquet
 
 # Local databases / logs
 *.sqlite
 *.sqlite3
 *.log
-
 
 # Local copies of bundled Claude Code skills (design, dataviz); large and version-specific
 .claude/skills/
