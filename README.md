@@ -43,8 +43,7 @@ Baseline model, scored once on the 1,388 complaints it never saw.
 | --- | --- |
 | Accuracy | 0.825 |
 | Macro F1 | 0.806 |
-| Threshold 0.55 | 71% routed at 90.7% accuracy |
-| Threshold 0.75 | 44% routed at 95.0% accuracy |
+| Routed automatically, threshold 0.75 | 44% of complaints, 95.0% of them correct |
 
 <p>
   <img src="reports/evaluate/figures/confusion_matrix.png" width="48%" alt="Confusion matrix on the test set">

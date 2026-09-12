@@ -333,25 +333,12 @@ def plot_class_map(points: pd.DataFrame, path: Path) -> str:
             linewidths=0,
             label=f"{cls} ({len(part):,})",
         )
-    for cls in classes:
-        part = points[points[CLASS_COLUMN] == cls]
-        ax.text(
-            part["x"].median(),
-            part["y"].median(),
-            cls,
-            fontsize=9,
-            fontweight="bold",
-            ha="center",
-            va="center",
-            color=INK,
-            bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.85),
-        )
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.set_title(
-        f"Class map: {len(points):,} training complaints, one dot each",
+        f"t-SNE scatter plot · training data, {len(points):,} complaints",
         loc="left",
         color=INK,
         fontsize=11,
@@ -367,8 +354,8 @@ def plot_class_map(points: pd.DataFrame, path: Path) -> str:
     fig.text(
         0.01,
         0.005,
-        "TF-IDF vectors squeezed to 2-D with t-SNE. Nearby dots use similar words; "
-        "a class with its own island is easy to route.",
+        "One dot per complaint, coloured by its true class. Nearby dots use similar words; "
+        "a class with its own region is easy to route.",
         fontsize=7.5,
         color=INK_SOFT,
     )
