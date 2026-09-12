@@ -1,106 +1,87 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 590" width="1200" height="590" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="Training map: the data path runs once from the raw CSV through ingest, clean, and split; the model path fits TF-IDF and logistic regression on the train rows, evaluates once on the test rows, and serves through a predictor.">
-  <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
-    </marker>
-  </defs>
-  <rect width="1200" height="590" fill="#fbfaf7"/>
-
-  <!-- Row labels -->
-  <text x="40" y="34" font-size="12" font-weight="600" fill="#64748b" letter-spacing="1">DATA PATH · RUNS ONCE</text>
-  <text x="500" y="254" font-size="12" font-weight="600" fill="#64748b" letter-spacing="1" text-anchor="middle">MODEL PATH · THE ONE MODEL THAT SHIPS</text>
-  <text x="40" y="474" font-size="12" font-weight="600" fill="#64748b" letter-spacing="1">TRACKING · EVERY RUN</text>
-
-  <!-- ================= Row 1: data path, 4 cards of 250 ================= -->
-  <g>
-    <rect x="40" y="50" width="250" height="130" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
-    <text x="60" y="80" font-size="16" font-weight="700" fill="#0f172a">Raw complaints</text>
-    <text x="60" y="106" font-size="13" fill="#334155">7,011 rows · 17 raw labels</text>
-    <text x="60" y="126" font-size="13" fill="#334155">text plus the product it was filed under</text>
-    <text x="60" y="160" font-size="12" font-family="Menlo, Consolas, monospace" fill="#2563eb">complaints_banking_2023.csv</text>
-  </g>
-  <line x1="290" y1="115" x2="328" y2="115" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-  <g>
-    <rect x="330" y="50" width="250" height="130" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
-    <text x="350" y="80" font-size="16" font-weight="700" fill="#0f172a">1 · Ingest</text>
-    <text x="350" y="106" font-size="13" fill="#334155">Load and type the rows, audit them</text>
-    <text x="350" y="126" font-size="13" fill="#334155">blanks to NaN · nulls, duplicates, stats</text>
-    <text x="350" y="160" font-size="12" font-family="Menlo, Consolas, monospace" fill="#92400e">ingest.py · data_study.py</text>
-  </g>
-  <line x1="580" y1="115" x2="618" y2="115" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-  <g>
-    <rect x="620" y="50" width="250" height="130" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
-    <text x="640" y="80" font-size="16" font-weight="700" fill="#0f172a">2 · Clean</text>
-    <text x="640" y="106" font-size="13" fill="#334155">17 raw labels to 7 classes, labels.yaml</text>
-    <text x="640" y="126" font-size="13" fill="#334155">collapse masks · drop short and dupes</text>
-    <text x="640" y="160" font-size="12" font-family="Menlo, Consolas, monospace" fill="#92400e">clean.py · 6,939 rows</text>
-  </g>
-  <line x1="870" y1="115" x2="908" y2="115" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-  <g>
-    <rect x="910" y="50" width="250" height="130" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
-    <text x="930" y="80" font-size="16" font-weight="700" fill="#0f172a">3 · Split</text>
-    <text x="930" y="106" font-size="13" fill="#334155">Frozen 80 / 20, stratified, seed 42</text>
-    <text x="930" y="126" font-size="13" fill="#334155">row assignment written to disk</text>
-    <text x="930" y="160" font-size="12" font-family="Menlo, Consolas, monospace" fill="#92400e">split.py · 5,551 train / 1,388 test</text>
-  </g>
-
-  <!-- Split -> row 2 connectors -->
-  <polyline points="1035,180 1035,212 168,212 168,268" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <polyline points="742,212 742,268" fill="none" stroke="#475569" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
-  <rect x="190" y="201" width="160" height="22" rx="4" fill="#fbfaf7"/>
-  <text x="270" y="217" font-size="12" text-anchor="middle" fill="#334155">train.parquet, 5,551 rows</text>
-  <rect x="758" y="226" width="170" height="22" rx="4" fill="#fbfaf7"/>
-  <text x="843" y="242" font-size="12" text-anchor="start" fill="#334155">test.parquet, read once</text>
-
-  <!-- ================= Row 2: model path, 4 cards of 257 ================= -->
-  <g>
-    <rect x="40" y="270" width="257" height="150" rx="8" fill="#dcfce7" stroke="#059669" stroke-width="1.5"/>
-    <text x="60" y="300" font-size="16" font-weight="700" fill="#0f172a">4 · Vectorize</text>
-    <text x="60" y="326" font-size="13" fill="#334155">TF-IDF: words and word pairs,</text>
-    <text x="60" y="346" font-size="13" fill="#334155">50k terms, fitted on train only.</text>
-    <text x="60" y="366" font-size="13" fill="#334155">Lives inside the saved model.</text>
-    <text x="60" y="400" font-size="12" font-family="Menlo, Consolas, monospace" fill="#065f46">vectorize.py · baseline.yaml</text>
-  </g>
-  <line x1="297" y1="345" x2="325" y2="345" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-  <g>
-    <rect x="327" y="270" width="257" height="150" rx="8" fill="#dcfce7" stroke="#059669" stroke-width="1.5"/>
-    <text x="347" y="300" font-size="16" font-weight="700" fill="#0f172a">5 · Classifier</text>
-    <text x="347" y="326" font-size="13" fill="#334155">Logistic regression, 7 classes,</text>
-    <text x="347" y="346" font-size="13" fill="#334155">balanced class weights. 5-fold</text>
-    <text x="347" y="366" font-size="13" fill="#334155">check, then one fit and save.</text>
-    <text x="347" y="400" font-size="12" font-family="Menlo, Consolas, monospace" fill="#065f46">train.py · baseline.joblib</text>
-  </g>
-  <line x1="584" y1="345" x2="612" y2="345" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-  <g>
-    <rect x="614" y="270" width="257" height="150" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="634" y="300" font-size="16" font-weight="700" fill="#0f172a">6 · Evaluate</text>
-    <text x="634" y="326" font-size="13" fill="#334155">Score the test rows exactly once.</text>
-    <text x="634" y="346" font-size="13" fill="#334155">Per-class F1, confusion matrix,</text>
-    <text x="634" y="366" font-size="13" fill="#334155">worst mistakes, review threshold.</text>
-    <text x="634" y="400" font-size="12" font-family="Menlo, Consolas, monospace" fill="#5b21b6">evaluate.py · reports/evaluate/</text>
-  </g>
-  <line x1="871" y1="345" x2="899" y2="345" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-  <g>
-    <rect x="901" y="270" width="257" height="150" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
-    <text x="921" y="300" font-size="16" font-weight="700" fill="#0f172a">7 · Serve</text>
-    <text x="921" y="326" font-size="13" fill="#334155">Predictor loads the model once.</text>
-    <text x="921" y="346" font-size="13" fill="#334155">Class and confidence out; below</text>
-    <text x="921" y="366" font-size="13" fill="#334155">the threshold goes to a person.</text>
-    <text x="921" y="400" font-size="12" font-family="Menlo, Consolas, monospace" fill="#334155">predictor.py · API · app · MCP</text>
-  </g>
-
-  <!-- ================= Row 3: tracking ================= -->
-  <g>
-    <rect x="40" y="490" width="1118" height="70" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
-    <text x="60" y="518" font-size="14" font-weight="700" fill="#0f172a">MLflow, local folder</text>
-    <text x="230" y="518" font-size="13" fill="#334155">Each run logs its settings, test metrics, and saved model, so models are compared on the same rows.</text>
-    <text x="60" y="544" font-size="13" fill="#334155">Baseline on the frozen test set:</text>
-    <text x="270" y="544" font-size="13" font-weight="600" fill="#0f172a">accuracy 0.825 · macro F1 0.806 · threshold 0.55 routes 71% at 90.7% accuracy</text>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 490" width="1300" height="490" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="Training map: the data path runs once from the raw CSV through ingest, wrangle, and freeze; the model path fits TF-IDF and logistic regression on the train rows, evaluates once on the test rows, and serves through a predictor that routes to a team mailbox or a review queue.">
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker></defs>
+  <rect width="1300" height="490" fill="#fbfaf7"/>
+  <text x="40" y="34" font-size="12" font-weight="600" fill="#64748b" letter-spacing="1">DATA PROCESSING · RUNS ONCE</text>
+  <text x="288" y="284" font-size="12" font-weight="600" fill="#64748b" letter-spacing="1">MODEL PATH · THE ONE MODEL THAT SHIPS</text>
+  <rect x="40" y="50" width="224" height="160" rx="8" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+  <path d="M 48 50 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#475569"/>
+  <text x="54" y="72" font-size="14" font-weight="700" fill="#ffffff">Raw data</text>
+  <text x="54" y="108" font-size="13" font-weight="700" fill="#1f2937">Source CSV</text>
+  <text x="54" y="130" font-size="12" fill="#1f2937">7,011 complaints · 17 raw labels</text>
+  <text x="54" y="148" font-size="12" fill="#1f2937">the text plus the product</text>
+  <text x="54" y="166" font-size="12" fill="#1f2937">it was filed under</text>
+  <text x="54" y="194" font-size="11" font-family="Menlo, Consolas, monospace" fill="#475569">complaints_banking_2023.csv</text>
+  <line x1="264" y1="130" x2="286" y2="130" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="288" y="50" width="224" height="160" rx="8" fill="#ffffff" stroke="#b45309" stroke-width="1.5"/>
+  <path d="M 296 50 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#b45309"/>
+  <text x="302" y="72" font-size="14" font-weight="700" fill="#ffffff">1 · Ingest</text>
+  <text x="302" y="108" font-size="13" font-weight="700" fill="#1f2937">Load and audit</text>
+  <text x="302" y="130" font-size="12" fill="#1f2937">Type every column, count</text>
+  <text x="302" y="148" font-size="12" fill="#1f2937">nulls, duplicates, text length</text>
+  <text x="302" y="194" font-size="11" font-family="Menlo, Consolas, monospace" fill="#b45309">ingest.py · data_study.py</text>
+  <line x1="512" y1="130" x2="534" y2="130" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="536" y="50" width="224" height="160" rx="8" fill="#ffffff" stroke="#b45309" stroke-width="1.5"/>
+  <path d="M 544 50 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#b45309"/>
+  <text x="550" y="72" font-size="14" font-weight="700" fill="#ffffff">2 · Wrangle</text>
+  <text x="550" y="108" font-size="13" font-weight="700" fill="#1f2937">Clean text, map labels</text>
+  <text x="550" y="130" font-size="12" fill="#1f2937">17 labels → 7 classes</text>
+  <text x="550" y="148" font-size="12" fill="#1f2937">masks collapsed, short and</text>
+  <text x="550" y="166" font-size="12" fill="#1f2937">duplicate rows dropped</text>
+  <text x="550" y="194" font-size="11" font-family="Menlo, Consolas, monospace" fill="#b45309">clean.py → clean.parquet</text>
+  <line x1="760" y1="130" x2="782" y2="130" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="784" y="50" width="224" height="160" rx="8" fill="#ffffff" stroke="#b45309" stroke-width="1.5"/>
+  <path d="M 792 50 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#b45309"/>
+  <text x="798" y="72" font-size="14" font-weight="700" fill="#ffffff">3 · Freeze</text>
+  <text x="798" y="108" font-size="13" font-weight="700" fill="#1f2937">Split once, never again</text>
+  <text x="798" y="130" font-size="12" fill="#1f2937">80 / 20, stratified, seed 42</text>
+  <text x="798" y="148" font-size="12" fill="#1f2937">the test rows are read by</text>
+  <text x="798" y="166" font-size="12" fill="#1f2937">Evaluate only</text>
+  <text x="798" y="194" font-size="11" font-family="Menlo, Consolas, monospace" fill="#b45309">split.py → train · test.parquet</text>
+  <rect x="40" y="300" width="224" height="160" rx="8" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+  <path d="M 48 300 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#475569"/>
+  <text x="54" y="322" font-size="14" font-weight="700" fill="#ffffff">Training data</text>
+  <text x="54" y="358" font-size="13" font-weight="700" fill="#1f2937">train.parquet</text>
+  <text x="54" y="380" font-size="12" fill="#1f2937">5,551 rows · text and class,</text>
+  <text x="54" y="398" font-size="12" fill="#1f2937">nothing else</text>
+  <text x="54" y="444" font-size="11" font-family="Menlo, Consolas, monospace" fill="#475569">data/processed/</text>
+  <line x1="264" y1="380" x2="286" y2="380" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="288" y="300" width="224" height="160" rx="8" fill="#ffffff" stroke="#047857" stroke-width="1.5"/>
+  <path d="M 296 300 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#047857"/>
+  <text x="302" y="322" font-size="14" font-weight="700" fill="#ffffff">4 · Vectorize</text>
+  <text x="302" y="358" font-size="13" font-weight="700" fill="#1f2937">Text → numbers</text>
+  <text x="302" y="380" font-size="12" fill="#1f2937">TF-IDF over words and word</text>
+  <text x="302" y="398" font-size="12" fill="#1f2937">pairs, 50k terms, fitted on</text>
+  <text x="302" y="416" font-size="12" fill="#1f2937">the train rows only</text>
+  <text x="302" y="444" font-size="11" font-family="Menlo, Consolas, monospace" fill="#047857">vectorize.py · baseline.yaml</text>
+  <line x1="512" y1="380" x2="534" y2="380" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="536" y="300" width="224" height="160" rx="8" fill="#ffffff" stroke="#047857" stroke-width="1.5"/>
+  <path d="M 544 300 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#047857"/>
+  <text x="550" y="322" font-size="14" font-weight="700" fill="#ffffff">5 · Train</text>
+  <text x="550" y="358" font-size="13" font-weight="700" fill="#1f2937">Logistic regression</text>
+  <text x="550" y="380" font-size="12" fill="#1f2937">7 classes, balanced weights,</text>
+  <text x="550" y="398" font-size="12" fill="#1f2937">real probabilities</text>
+  <text x="550" y="416" font-size="12" fill="#1f2937">5-fold check, then one fit</text>
+  <text x="550" y="444" font-size="11" font-family="Menlo, Consolas, monospace" fill="#047857">train.py → baseline.joblib</text>
+  <line x1="760" y1="380" x2="782" y2="380" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="784" y="300" width="224" height="160" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="1.5"/>
+  <path d="M 792 300 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#6d28d9"/>
+  <text x="798" y="322" font-size="14" font-weight="700" fill="#ffffff">6 · Evaluate</text>
+  <text x="798" y="358" font-size="13" font-weight="700" fill="#1f2937">Score the test set once</text>
+  <text x="798" y="380" font-size="12" fill="#1f2937">accuracy 0.825 · macro-F1 0.806</text>
+  <text x="798" y="398" font-size="12" fill="#1f2937">confusion matrix, per-class F1,</text>
+  <text x="798" y="416" font-size="12" fill="#1f2937">threshold sweep</text>
+  <text x="798" y="444" font-size="11" font-family="Menlo, Consolas, monospace" fill="#6d28d9">evaluate.py → reports/evaluate/</text>
+  <line x1="1008" y1="380" x2="1030" y2="380" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="1032" y="300" width="224" height="160" rx="8" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <path d="M 1040 300 h 208 a 8 8 0 0 1 8 8 v 24 h -224 v -24 a 8 8 0 0 1 8 -8 z" fill="#1d4ed8"/>
+  <text x="1046" y="322" font-size="14" font-weight="700" fill="#ffffff">7 · Serve</text>
+  <text x="1046" y="358" font-size="13" font-weight="700" fill="#1f2937">Predict and route</text>
+  <text x="1046" y="380" font-size="12" fill="#1f2937">class + confidence →</text>
+  <text x="1046" y="398" font-size="12" fill="#1f2937">team mailbox · under 0.75 →</text>
+  <text x="1046" y="416" font-size="12" fill="#1f2937">review queue for a person</text>
+  <text x="1046" y="444" font-size="11" font-family="Menlo, Consolas, monospace" fill="#1d4ed8">predictor.py · API · MCP · app</text>
+  <path d="M 854 210 V 259 H 152 V 298" fill="none" stroke="#b45309" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="164" y="253" font-size="11" fill="#b45309">train.parquet → training</text>
+  <line x1="948" y1="210" x2="948" y2="298" stroke="#6d28d9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="956" y="281" font-size="11" fill="#6d28d9">test.parquet → evaluate only</text>
+  </svg>

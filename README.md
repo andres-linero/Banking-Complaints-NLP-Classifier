@@ -33,7 +33,7 @@ lives at `frontend/app.py`.
 The data path runs once and freezes a train set and a test set. The model path fits one model on
 the train rows, scores it on the test rows exactly once, and serves it.
 
-<img src="docs/pipeline.svg" alt="Training map: data path from the raw CSV through ingest, clean, and split; model path through vectorize, classifier, evaluate, and serve; every run tracked in MLflow" width="100%">
+<img src="docs/pipeline.svg" alt="Training map: data processing from the raw CSV through ingest, wrangle, and freeze; model path through vectorize, train, evaluate, and serve; the frozen split feeds training and the test rows are read by evaluate only" width="100%">
 
 **How the model is trained**
 
