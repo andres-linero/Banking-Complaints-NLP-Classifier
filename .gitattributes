@@ -1,0 +1,5 @@
+# Keep GitHub language stats honest: the notebook is historical documentation, not the codebase.
+notebooks/*.ipynb linguist-documentation
+# Generated artefacts are not source either.
+docs/*.svg linguist-generated
+reports/** linguist-generated
