@@ -59,13 +59,15 @@ predictions are in `reports/evaluate/`.
 
 ## Quick start
 
-Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). The trained model and the frozen test
-set are in the repo, so nothing needs training to try it.
+Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). The trained model ships in the repo as
+`models/baseline.joblib`, with the frozen test set next to it, so nothing needs training. Run
+`uv sync` once, then open whichever door you want. All three load that one file.
 
-```bash
-uv sync                                  # create .venv from uv.lock
-uv run streamlit run frontend/app.py     # open the app at http://localhost:8501
-```
+| For | Door | Command |
+| --- | --- | --- |
+| People | Streamlit app | `uv run streamlit run frontend/app.py`, then open http://localhost:8501 |
+| Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload`, then see [API](#api) |
+| AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
 
 To retrain from the raw CSV, run the stages in order: `clean`, `split`, `train`, `evaluate`, each
 as `uv run python -m complaints.<stage>`. Each one prints what it wrote. Browse the runs with
@@ -85,15 +87,9 @@ The routing table loads with the model and must cover every class. Every predict
 a `destination`: the predicted team mailbox, or the review queue when confidence is below
 the threshold. The configured addresses are demo values.
 
-| Audience | Door | Command |
-| --- | --- | --- |
-| Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload` |
-| People | Streamlit app, workflow demo and Inbox pages | `uv run streamlit run frontend/app.py` |
-| AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
-
 ### API
 
-Start the FastAPI server with the command above, then run the request below in another terminal.
+Start the FastAPI server with the command in [Quick start](#quick-start), then run the request below in another terminal.
 
 | Endpoint | Returns |
 | --- | --- |
