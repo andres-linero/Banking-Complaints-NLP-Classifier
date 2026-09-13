@@ -92,44 +92,26 @@ Start FastAPI with the command in [Quick start](#quick-start), then call it from
 | `GET /inbox?n=20&seed=42` | A seeded sample of held-out complaints wrapped as emails, `n` from 1 to 200 |
 | `GET /inbox/next` | One email per call, cycling through the default sample |
 
-```bash
-curl -X POST http://127.0.0.1:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"text": "The bank charged me fees I do not recognize and nobody has resolved my complaint."}'
-```
+One call, start to finish: the text becomes a TF-IDF vector, the model scores it, and the JSON
+below comes back from `POST /predict`. Confidence 0.35 is under the 0.75 threshold, so this one
+goes to the review queue.
 
-```json
-{
-  "product": "Bank account",
-  "confidence": 0.3496,
-  "needs_review": true,
-  "destination": "complaints-review@bank.example",
-  "probabilities": {
-    "Bank account": 0.3496,
-    "Credit card": 0.1787,
-    "Mortgage": 0.1433,
-    "Credit reporting": 0.1308,
-    "Debt collection": 0.1093,
-    "Loan": 0.0576,
-    "Student loan": 0.0307
-  }
-}
-```
-
-Confidence 0.35 is under the 0.75 threshold, so this one goes to the review queue.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/message-to-answer-dark.gif">
+  <img src="docs/message-to-answer-light.gif" width="100%" alt="Animation: a complaint message becomes a vector, passes through the model, and returns a JSON prediction with product Bank account, confidence 0.35, needs_review true, and the review queue as destination">
+</picture>
 
 ### Limits
 
 Local demo only: no authentication, and no real email is sent. The model reads banking
 complaints; unrelated text is not guaranteed to be flagged for review.
 
-## Demo
+## [Demo](docs/demo.md)
 
 A two-page Streamlit app shows the model routing a bank's complaint inbox: one page handles
-emails one at a time, the other routes the whole test set and shows it as an inbox.
-
-**To try it, follow the walkthrough in [docs/demo.md](docs/demo.md).** It has the launch
-command, screenshots of both pages, and what each control does.
+emails one at a time, the other routes the whole test set and shows it as an inbox. The
+walkthrough in `docs/demo.md` has the launch command, screenshots of both pages, and what each
+control does.
 
 ## Development
 
