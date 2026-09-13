@@ -157,9 +157,3 @@ pyproject.toml               metadata and dependency groups
 uv.lock                      pinned lockfile used by uv sync
 .github/workflows/ci.yml     lint and test workflow
 ```
-
-## Notebook role
-
-The notebook is the exploration record: EDA, preprocessing experiments, model trials, and the
-original write-up. The reusable implementation lives in `src/complaints`. Opening the notebook needs its own
-dependencies: `uv sync --group notebook`.
