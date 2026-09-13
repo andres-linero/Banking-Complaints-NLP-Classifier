@@ -21,7 +21,6 @@ lives at `frontend/app.py`.
 **Contents:**
 [How it works](#how-it-works) ·
 [Results](#results) ·
-[Stages and files](#stages-and-files) ·
 [Quick start](#quick-start) ·
 [Serving](#serving) ·
 [Demo](#demo) ·
@@ -58,35 +57,14 @@ account and Credit card share one, and Loan has no region of its own.
 Per-class scores, the full confusion matrix, the threshold curve, and the most confident wrong
 predictions are in `reports/evaluate/`.
 
-## Stages and files
-
-Each stage is one module under `src/complaints/`, runnable on its own, with a
-`--config` flag that points at `configs/runtime.yaml`. Command-line paths override the YAML.
-
-| Stage | Module | Reads | Writes |
-| --- | --- | --- | --- |
-| 1 · Ingest | `ingest.py`, `data_study.py` | `data/raw/complaints_banking_2023.csv` | `reports/data_study/audit.json`, `study.md` |
-| 2 · Wrangle | `clean.py` | Raw CSV, `configs/labels.yaml` | `data/processed/clean.parquet`, `reports/cleaning/report.json` |
-| 3 · Freeze | `split.py` | `clean.parquet` | `train.parquet`, `test.parquet`, `reports/split/` |
-| 4 · Vectorize | `vectorize.py` | `configs/baseline.yaml` | The TF-IDF step inside the saved model |
-| 5 · Train | `train.py` | `train.parquet`, `configs/baseline.yaml` | `models/baseline.joblib`, `reports/train/baseline.json`, MLflow run |
-| 6 · Evaluate | `evaluate.py` | `test.parquet`, `train.parquet`, `models/baseline.joblib` | `reports/evaluate/baseline.json`, `worst_mistakes.csv`, `figures/` |
-| 7 · Serve | `predictor.py` | `models/baseline.joblib`, `configs/serving.yaml`, `configs/routing.yaml` | Returns product, confidence, needs_review, probabilities, destination |
-
-One more module supports the stages: `config.py` resolves paths and loads the YAML files.
-
-Five YAML files under `configs/` hold the settings: `runtime.yaml` for paths, `labels.yaml`
-for the label map, `baseline.yaml` for model settings, `serving.yaml` for the model name and
-review threshold, and `routing.yaml` for one team mailbox per class plus a review queue.
-The routing table loads with the model and must cover every class. Every prediction carries
-a `destination`: the predicted team mailbox, or the review queue when confidence is below
-the threshold. The configured addresses are demo values.
-
 ## Quick start
 
 Requirements: Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). Run all commands from
 the repo root. The training commands require `data/raw/complaints_banking_2023.csv`; serving
 and the demo require the saved model and frozen test set produced below.
+
+Each stage is one module under `src/complaints/`, runnable on its own, with a `--config` flag
+that points at `configs/runtime.yaml`. Command-line paths override the YAML.
 
 ```bash
 uv sync                                  # create .venv from uv.lock
@@ -121,6 +99,13 @@ One predictor, three doors. `predictor.py` loads the saved model once, applies t
 normalisation as training, and returns the product, confidence, class probabilities, whether
 the complaint needs a person, and its destination mailbox. The routing model powers all three
 doors; the Streamlit demo shows it handling individual emails and a complete inbox.
+
+Five YAML files under `configs/` hold the settings: `runtime.yaml` for paths, `labels.yaml`
+for the label map, `baseline.yaml` for model settings, `serving.yaml` for the model name and
+review threshold, and `routing.yaml` for one team mailbox per class plus a review queue.
+The routing table loads with the model and must cover every class. Every prediction carries
+a `destination`: the predicted team mailbox, or the review queue when confidence is below
+the threshold. The configured addresses are demo values.
 
 | Audience | Door | Command |
 | --- | --- | --- |
