@@ -158,50 +158,15 @@ Routing selects a destination mailbox; the demo does not send real email.
 
 ## Demo
 
-Launch the two-page app from the repo root:
+A two-page Streamlit app shows the model routing a bank's complaint inbox. One page handles
+emails one at a time, from a test-set picker or your own text, and shows where each one lands.
+The other routes the whole test set and shows it as an inbox you can filter and open.
 
 ```bash
 uv run streamlit run frontend/app.py
 ```
 
-Senders, subjects, and dates are invented; the test-set complaint text is real and held out
-from training. Subjects are generated from the complaint's opening words. Complaints you write
-in the compose window are your own input and have no known test label.
-
-### Bank email workflow demo
-
-Pick a complaint from the test-set picker, see its class tag, and paste it into the compose
-window, or paste or write your own complaint. Send it to watch the model choose a team mailbox
-or flag it for a person. A boxed scoreboard at the top tracks arrivals, automatic routes,
-correct predictions among checked automatically routed test emails, and emails sent to a person.
-
-Each handled email gets a card with its sender, a **Routed to** pill in the team's colour,
-confidence, and a correct or wrong badge when a test label is available. When sent to a person,
-the card still shows the model's guess and whether that guess was right. Expand **Read more**
-for the complaint, routing steps, and the timed `predictor.predict` call with its returned fields.
-
-### Inbox
-
-The whole frozen test set—**1,388 emails**—is routed once and cached. The top tiles show:
-
-| Tile | Saved baseline result at threshold 0.75 |
-| --- | --- |
-| Total emails | 1,388 |
-| Model accuracy, all emails | 82.5%, including guesses on flagged emails |
-| Accuracy when routed | 95.0%: 574 correct out of 604 automatically routed |
-| Flagged for a person | 784 |
-
-Filter by team folder or **Needs a person**. The table shows 25 emails per page, with **Previous**
-and **Next** controls. Flag and confidence tooltips explain the 0.75 threshold. Use the picker
-below the table to read one email in full, including its prediction, destination, and true label.
-The API's `/inbox` and `/inbox/next` endpoints provide the fake mail source described above.
-
-<!-- Screenshots pending from Andres. Add these files under docs/, then uncomment this block.
-<p>
-  <img src="docs/demo-workflow.png" width="48%" alt="Bank email workflow demo with scoreboard, compose window, and routed email cards">
-  <img src="docs/demo-inbox.png" width="48%" alt="Inbox with test-set metrics, folder filter, and paginated emails">
-</p>
--->
+Screenshots and a walkthrough are in [docs/demo.md](docs/demo.md).
 
 ## Development
 
@@ -223,7 +188,6 @@ Reproducibility notes:
 - Trained models, parquet files, MLflow runs, and the virtual environment are git-ignored.
 - Optional dependency groups: `mcp` for the MCP SDK, `notebook` for Jupyter and historical
   notebook libraries, and `dev` for tests and linting.
-- Transformer experiments are future work tracked in issue #9.
 
 ## Project layout
 
