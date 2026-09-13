@@ -75,28 +75,22 @@ as `uv run python -m complaints.<stage>`. Each one prints what it wrote. Browse 
 
 ## Serving
 
-One predictor, three doors. `predictor.py` loads the saved model once, applies the same text
-normalisation as training, and returns the product, confidence, class probabilities, whether
-the complaint needs a person, and its destination mailbox. The routing model powers all three
-doors; the Streamlit demo shows it handling individual emails and a complete inbox.
-
-Five YAML files under `configs/` hold the settings: `runtime.yaml` for paths, `labels.yaml`
-for the label map, `baseline.yaml` for model settings, `serving.yaml` for the model name and
-review threshold, and `routing.yaml` for one team mailbox per class plus a review queue.
-The routing table loads with the model and must cover every class. Every prediction carries
-a `destination`: the predicted team mailbox, or the review queue when confidence is below
-the threshold. The configured addresses are demo values.
+One predictor, three doors. `predictor.py` loads `models/baseline.joblib` once and, for each
+complaint, returns the product, the confidence, the class probabilities, a review flag, and a
+destination mailbox. Confidence below the threshold in `configs/serving.yaml` sends the complaint
+to the review queue instead of a team mailbox. Mailboxes come from `configs/routing.yaml`, one per
+class plus the review queue, and are demo values.
 
 ### API
 
-Start the FastAPI server with the command in [Quick start](#quick-start), then run the request below in another terminal.
+Start FastAPI with the command in [Quick start](#quick-start), then call it from another terminal.
 
 | Endpoint | Returns |
 | --- | --- |
 | `POST /predict` | Product, confidence, review flag, class probabilities, and `destination` mailbox |
-| `GET /health` | Model name, threshold, classes, and the routing table as `destinations` plus `review_queue` |
-| `GET /inbox?n=20&seed=42` | Fake mail source: a seeded sample of held-out complaints wrapped as emails; `n` accepts 1–200 |
-| `GET /inbox/next` | One email per call, cycling through the default 20-email sample with seed 42 |
+| `GET /health` | Model name, threshold, classes, and the routing table |
+| `GET /inbox?n=20&seed=42` | A seeded sample of held-out complaints wrapped as emails, `n` from 1 to 200 |
+| `GET /inbox/next` | One email per call, cycling through the default sample |
 
 ```bash
 curl -X POST http://127.0.0.1:8000/predict \
@@ -122,16 +116,12 @@ curl -X POST http://127.0.0.1:8000/predict \
 }
 ```
 
-Confidence 0.35 is below the 0.75 review threshold in `configs/serving.yaml`, so this one goes
-to the review queue instead of a team mailbox. Change the threshold there and every door moves
-together after the predictor reloads.
+Confidence 0.35 is under the 0.75 threshold, so this one goes to the review queue.
 
 ### Limits
 
-The API has no authentication and is for a local demo only. The model is trained to read banking
-complaints; other input should go to a person. It flags confidence below 0.75 for review, but
-has no separate out-of-domain detector, so unrelated text is not guaranteed to be flagged.
-Routing selects a destination mailbox; the demo does not send real email.
+Local demo only: no authentication, and no real email is sent. The model reads banking
+complaints; unrelated text is not guaranteed to be flagged for review.
 
 ## Demo
 
