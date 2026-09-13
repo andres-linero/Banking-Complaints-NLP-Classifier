@@ -135,19 +135,22 @@ curl -X POST http://127.0.0.1:8000/predict \
   "product": "Bank account",
   "confidence": 0.3496,
   "needs_review": true,
+  "destination": "complaints-review@bank.example",
   "probabilities": {
     "Bank account": 0.3496,
     "Credit card": 0.1787,
     "Mortgage": 0.1433,
-    "...": "..."
+    "Credit reporting": 0.1308,
+    "Debt collection": 0.1093,
+    "Loan": 0.0576,
+    "Student loan": 0.0307
   }
 }
 ```
 
-The review threshold lives in `configs/serving.yaml`, currently 0.75. Change it there and every
-door moves together after the predictor reloads. The response above preserves the real saved-model
-output for that text (with abbreviated probabilities); the current API also includes
-`"destination": "complaints-review@bank.example"` for this reviewed complaint.
+Confidence 0.35 is below the 0.75 review threshold in `configs/serving.yaml`, so this one goes
+to the review queue instead of a team mailbox. Change the threshold there and every door moves
+together after the predictor reloads.
 
 ### Limits
 
@@ -158,15 +161,11 @@ Routing selects a destination mailbox; the demo does not send real email.
 
 ## Demo
 
-A two-page Streamlit app shows the model routing a bank's complaint inbox. One page handles
-emails one at a time, from a test-set picker or your own text, and shows where each one lands.
-The other routes the whole test set and shows it as an inbox you can filter and open.
+A two-page Streamlit app shows the model routing a bank's complaint inbox: one page handles
+emails one at a time, the other routes the whole test set and shows it as an inbox.
 
-```bash
-uv run streamlit run frontend/app.py
-```
-
-Screenshots and a walkthrough are in [docs/demo.md](docs/demo.md).
+**To try it, follow the walkthrough in [docs/demo.md](docs/demo.md).** It has the launch
+command, screenshots of both pages, and what each control does.
 
 ## Development
 
