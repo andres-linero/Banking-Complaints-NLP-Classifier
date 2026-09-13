@@ -28,9 +28,11 @@ coverage.xml
 htmlcov/
 
 # Trained models, MLflow runs, and derived data: regenerate with the stage commands
-models/
+models/*
+!models/baseline.joblib
 mlruns/
-data/processed/
+data/processed/*
+!data/processed/test.parquet
 
 
 # Local databases / logs

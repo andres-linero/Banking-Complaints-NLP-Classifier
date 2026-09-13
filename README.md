@@ -59,22 +59,17 @@ predictions are in `reports/evaluate/`.
 
 ## Quick start
 
-Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). Run everything from the repo root with
-`data/raw/complaints_banking_2023.csv` in place.
+Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). The trained model and the frozen test
+set are in the repo, so nothing needs training to try it.
 
 ```bash
 uv sync                                  # create .venv from uv.lock
-uv run python -m complaints.clean        # labels and text cleaning
-uv run python -m complaints.split        # freeze train and test
-uv run python -m complaints.train        # fit the baseline, log to MLflow
-uv run python -m complaints.evaluate     # score the test set once
+uv run streamlit run frontend/app.py     # open the app at http://localhost:8501
 ```
 
-Each stage prints what it wrote. Reports are committed; parquet files, the model, and `mlruns/`
-regenerate in under a minute. Add `--no-learning-curve` to evaluate to skip its slowest figure.
-Every stage takes `--config` to point at a different `configs/runtime.yaml`.
-
-Browse the MLflow runs with `uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`.
+To retrain from the raw CSV, run the stages in order: `clean`, `split`, `train`, `evaluate`, each
+as `uv run python -m complaints.<stage>`. Each one prints what it wrote. Browse the runs with
+`uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`.
 
 ## Serving
 
