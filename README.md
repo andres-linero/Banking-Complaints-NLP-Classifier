@@ -9,6 +9,10 @@
 This project ships two things: a routing model for consumer banking complaints and a demo
 showing it at work on an inbox.
 
+The model was trained on 6,900+ real bank complaint comments carrying 17 product labels, merged
+into 7 target classes. TF-IDF turns each complaint into numbers, and a logistic regression
+classifier learns which words point to which product.
+
 A complaint goes in as free text. The model returns one of seven product classes, a confidence
 score, and a destination mailbox. Complaints below a confidence threshold go to a review queue
 for a person. The model and serving code live in `src/complaints/`; the two-page Streamlit demo
@@ -17,10 +21,7 @@ lives at `frontend/app.py`.
 **Contents:**
 [How it works](#how-it-works) ·
 [Results](#results) ·
-[Stages and files](#stages-and-files) ·
 [Quick start](#quick-start) ·
-[Serving](#serving) ·
-[Demo](#demo) ·
 [Development](#development) ·
 [Project layout](#project-layout)
 
@@ -29,192 +30,91 @@ lives at `frontend/app.py`.
 The data path runs once and freezes a train set and a test set. The model path fits one model on
 the train rows, scores it on the test rows exactly once, and serves it.
 
-<img src="docs/pipeline.svg" alt="Training map: data path from the raw CSV through ingest, clean, and split; model path through vectorize, classifier, evaluate, and serve; every run tracked in MLflow" width="100%">
+<img src="docs/pipeline.svg" alt="Training map: data processing from the raw CSV through ingest, wrangle, and freeze; model path through vectorize, train, evaluate, and serve; the frozen split feeds training and the test rows are read by evaluate only" width="100%">
 
 ## Results
 
 Baseline model, scored once on the 1,388 complaints it never saw.
 
-| Metric | Value | Note |
-| --- | --- | --- |
-| Accuracy | 0.825 | Share of all test complaints classified correctly, including those flagged for review |
-| Macro F1 | 0.806 | Every class counts the same, big or small |
-| Threshold 0.55 | 71% routed at 90.7% accuracy | The point where automatic routing hits 90% |
-| Threshold 0.75 | 44% routed at 95.0% accuracy | The setting in `serving.yaml`; the rest go to a person |
-| Weakest class | Loan, F1 0.68 | 32 test rows, spills into four other classes |
+| Metric | Value |
+| --- | --- |
+| Accuracy | 0.825 |
+| Macro F1 | 0.806 |
+| Routed automatically, threshold 0.75 | 44% of complaints, 95.0% of them correct |
 
 <p>
   <img src="reports/evaluate/figures/confusion_matrix.png" width="48%" alt="Confusion matrix on the test set">
-  <img src="reports/evaluate/figures/threshold_curve.png" width="48%" alt="Coverage and routed accuracy against the confidence threshold">
+  <img src="reports/evaluate/figures/class_map.png" width="48%" alt="Class map: the training complaints laid out in two dimensions and coloured by class">
 </p>
 
-Rows of the confusion matrix are the true class. The two biggest leaks are credit card read as
-bank account, and credit reporting read as credit card. The threshold curve shows the trade: raise
-the cutoff and fewer complaints route automatically, but the ones that do are right more often.
+Rows of the confusion matrix are the true class; the diagonal is what the model got right. The
+class map shows the same story from the training side: each dot is one complaint, placed near
+the complaints that use similar words. Mortgage and Debt collection have their own regions, Bank
+account and Credit card share one, and Loan has no region of its own.
 
-Per-class scores, the full confusion matrix, and the most confident wrong predictions are in
-`reports/evaluate/`.
-
-## Stages and files
-
-Each stage is one module under `src/complaints/`, runnable on its own, with a
-`--config` flag that points at `configs/runtime.yaml`. Command-line paths override the YAML.
-
-| Stage | Module | Reads | Writes |
-| --- | --- | --- | --- |
-| 1 · Ingest | `ingest.py` | `data/raw/complaints_banking_2023.csv` | Nothing. Library used by the next two stages |
-| 1 · Data study | `data_study.py` | Raw CSV | `reports/data_study/audit.json`, `study.md` |
-| 2 · Clean | `clean.py` | Raw CSV, `configs/labels.yaml` | `data/processed/clean.parquet`, `reports/cleaning/report.json` |
-| 3 · Split | `split.py` | `clean.parquet` | `train.parquet`, `test.parquet`, `reports/split/` |
-| 4 · Train | `train.py` | `train.parquet`, `configs/baseline.yaml` | `models/baseline.joblib`, `reports/train/baseline.json`, MLflow run |
-| 5 · Evaluate | `evaluate.py` | `test.parquet`, `models/baseline.joblib` | `reports/evaluate/baseline.json`, `worst_mistakes.csv`, `figures/` |
-| 6 · Serve | `predictor.py` | `models/baseline.joblib`, `configs/serving.yaml`, `configs/routing.yaml` | Returns product, confidence, needs_review, probabilities, destination |
-
-Two more modules support the stages. `config.py` resolves paths and loads the label map, and
-`vectorize.py` builds the TF-IDF step from `configs/baseline.yaml`.
-
-Five YAML files under `configs/` hold the settings: `runtime.yaml` for paths, `labels.yaml`
-for the label map, `baseline.yaml` for model settings, `serving.yaml` for the model name and
-review threshold, and `routing.yaml` for one team mailbox per class plus a review queue.
-The routing table loads with the model and must cover every class. Every prediction carries
-a `destination`: the predicted team mailbox, or the review queue when confidence is below
-the threshold. The configured addresses are demo values.
+Per-class scores, the full confusion matrix, the threshold curve, and the most confident wrong
+predictions are in `reports/evaluate/`.
 
 ## Quick start
 
-Requirements: Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). Run all commands from
-the repo root. The training commands require `data/raw/complaints_banking_2023.csv`; serving
-and the demo require the saved model and frozen test set produced below.
+Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). The trained model ships in the repo as
+`models/baseline.joblib`, with the frozen test set next to it, so nothing needs training.
 
 ```bash
-uv sync                                  # create .venv from uv.lock
-uv run python -m complaints.data_study   # audit the raw CSV, optional
-uv run python -m complaints.clean        # labels and text cleaning
-uv run python -m complaints.split        # freeze train and test
-uv run python -m complaints.train        # fit the baseline, log to MLflow
-uv run python -m complaints.evaluate     # score the test set once
+uv sync
 ```
 
-Every stage prints what it wrote. Add `--no-learning-curve` to evaluate to skip its slowest figure.
+One predictor, three doors. `predictor.py` loads the model once and, for each complaint, returns
+the product, the confidence, the class probabilities, a review flag, and a destination mailbox.
+Confidence under the threshold in `configs/serving.yaml` goes to the review queue; mailboxes are
+demo values from `configs/routing.yaml`. Pick a door:
 
-Note:
-
-- Reports are committed, so the numbers above can be checked without retraining. Parquet files,
-  the saved model, and the MLflow folder are git-ignored and regenerate in under a minute.
-- The test set is held out from training and read by evaluate and the demo. The split is frozen
-  to disk with the Complaint ID assignment, so every model is scored on identical rows.
-- Cleaning is not modelling. Lowercasing and n-grams are model choices in `baseline.yaml`, not
-  cleaning steps.
-- The classifier must output real probabilities. The review threshold depends on them.
-
-To browse the runs:
+### [People · Streamlit demo](docs/demo.md)
 
 ```bash
-uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
+uv run streamlit run frontend/app.py     # http://localhost:8501
 ```
 
-## Serving
+Two pages: one routes emails one at a time, the other routes the whole test set and shows it as
+an inbox. The walkthrough behind the title has screenshots and what each control does.
 
-One predictor, three doors. `predictor.py` loads the saved model once, applies the same text
-normalisation as training, and returns the product, confidence, class probabilities, whether
-the complaint needs a person, and its destination mailbox. The routing model powers all three
-doors; the Streamlit demo shows it handling individual emails and a complete inbox.
+### Applications · FastAPI
 
-| Audience | Door | Command |
-| --- | --- | --- |
-| Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload` |
-| People | Streamlit app, workflow demo and Inbox pages | `uv run streamlit run frontend/app.py` |
-| AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
-
-### API
-
-Start the FastAPI server with the command above, then run the request below in another terminal.
+```bash
+uv run uvicorn complaints.api:app --reload
+```
 
 | Endpoint | Returns |
 | --- | --- |
 | `POST /predict` | Product, confidence, review flag, class probabilities, and `destination` mailbox |
-| `GET /health` | Model name, threshold, classes, and the routing table as `destinations` plus `review_queue` |
-| `GET /inbox?n=20&seed=42` | Fake mail source: a seeded sample of held-out complaints wrapped as emails; `n` accepts 1–200 |
-| `GET /inbox/next` | One email per call, cycling through the default 20-email sample with seed 42 |
+| `GET /health` | Model name, threshold, classes, and the routing table |
+| `GET /inbox?n=20&seed=42` | A seeded sample of held-out complaints wrapped as emails, `n` from 1 to 200 |
+| `GET /inbox/next` | One email per call, cycling through the default sample |
+
+One call, start to finish. The text becomes a TF-IDF vector, the model scores it, and the JSON
+comes back. Confidence 0.35 is under the 0.75 threshold, so this one goes to the review queue.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/message-to-answer-dark.gif">
+  <img src="docs/message-to-answer-light.gif" width="100%" alt="Animation: a complaint message becomes a vector, passes through the model, and returns a JSON prediction with product Bank account, confidence 0.35, needs_review true, and the review queue as destination">
+</picture>
+
+### AI agents · MCP
 
 ```bash
-curl -X POST http://127.0.0.1:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"text": "The bank charged me fees I do not recognize and nobody has resolved my complaint."}'
+uv sync --group mcp && uv run python -m complaints.mcp_server
 ```
 
-```json
-{
-  "product": "Bank account",
-  "confidence": 0.3496,
-  "needs_review": true,
-  "probabilities": {
-    "Bank account": 0.3496,
-    "Credit card": 0.1787,
-    "Mortgage": 0.1433,
-    "...": "..."
-  }
-}
-```
+Two tools over stdio: `classify_complaint(text)` returns the same fields as `POST /predict`, and
+`list_products()` returns the classes and the threshold.
 
-The review threshold lives in `configs/serving.yaml`, currently 0.75. Change it there and every
-door moves together after the predictor reloads. The response above preserves the real saved-model
-output for that text (with abbreviated probabilities); the current API also includes
-`"destination": "complaints-review@bank.example"` for this reviewed complaint.
+### Notes
 
-### Limits
-
-The API has no authentication and is for a local demo only. The model is trained to read banking
-complaints; other input should go to a person. It flags confidence below 0.75 for review, but
-has no separate out-of-domain detector, so unrelated text is not guaranteed to be flagged.
-Routing selects a destination mailbox; the demo does not send real email.
-
-## Demo
-
-Launch the two-page app from the repo root:
-
-```bash
-uv run streamlit run frontend/app.py
-```
-
-Senders, subjects, and dates are invented; the test-set complaint text is real and held out
-from training. Subjects are generated from the complaint's opening words. Complaints you write
-in the compose window are your own input and have no known test label.
-
-### Bank email workflow demo
-
-Pick a complaint from the test-set picker, see its class tag, and paste it into the compose
-window, or paste or write your own complaint. Send it to watch the model choose a team mailbox
-or flag it for a person. A boxed scoreboard at the top tracks arrivals, automatic routes,
-correct predictions among checked automatically routed test emails, and emails sent to a person.
-
-Each handled email gets a card with its sender, a **Routed to** pill in the team's colour,
-confidence, and a correct or wrong badge when a test label is available. When sent to a person,
-the card still shows the model's guess and whether that guess was right. Expand **Read more**
-for the complaint, routing steps, and the timed `predictor.predict` call with its returned fields.
-
-### Inbox
-
-The whole frozen test set—**1,388 emails**—is routed once and cached. The top tiles show:
-
-| Tile | Saved baseline result at threshold 0.75 |
-| --- | --- |
-| Total emails | 1,388 |
-| Model accuracy, all emails | 82.5%, including guesses on flagged emails |
-| Accuracy when routed | 95.0%: 574 correct out of 604 automatically routed |
-| Flagged for a person | 784 |
-
-Filter by team folder or **Needs a person**. The table shows 25 emails per page, with **Previous**
-and **Next** controls. Flag and confidence tooltips explain the 0.75 threshold. Use the picker
-below the table to read one email in full, including its prediction, destination, and true label.
-The API's `/inbox` and `/inbox/next` endpoints provide the fake mail source described above.
-
-<!-- Screenshots pending from Andres. Add these files under docs/, then uncomment this block.
-<p>
-  <img src="docs/demo-workflow.png" width="48%" alt="Bank email workflow demo with scoreboard, compose window, and routed email cards">
-  <img src="docs/demo-inbox.png" width="48%" alt="Inbox with test-set metrics, folder filter, and paginated emails">
-</p>
--->
+- Local demo only: no authentication, and no real email is sent. Unrelated text is not
+  guaranteed to be flagged for review.
+- To retrain from the raw CSV, run `clean`, `split`, `train`, `evaluate` in order, each as
+  `uv run python -m complaints.<stage>`. Browse the runs with
+  `uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`.
 
 ## Development
 
@@ -236,7 +136,6 @@ Reproducibility notes:
 - Trained models, parquet files, MLflow runs, and the virtual environment are git-ignored.
 - Optional dependency groups: `mcp` for the MCP SDK, `notebook` for Jupyter and historical
   notebook libraries, and `dev` for tests and linting.
-- Transformer experiments are future work tracked in issue #9.
 
 ## Project layout
 
@@ -258,9 +157,3 @@ pyproject.toml               metadata and dependency groups
 uv.lock                      pinned lockfile used by uv sync
 .github/workflows/ci.yml     lint and test workflow
 ```
-
-## Notebook role
-
-The notebook is the exploration record: EDA, preprocessing experiments, model trials, and the
-original write-up. The reusable implementation lives in `src/complaints`. Opening the notebook needs its own
-dependencies: `uv sync --group notebook`.

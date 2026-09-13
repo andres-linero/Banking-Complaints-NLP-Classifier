@@ -109,5 +109,17 @@ def test_cli_writes_report_figures_and_mistakes(tmp_path, monkeypatch) -> None:
     assert report["test_rows"] == 10
     assert "learning_curve" not in report
     assert (out / "worst_mistakes.csv").exists()
-    for name in ("confusion_matrix", "per_class_f1", "threshold_curve", "calibration"):
+    for name in ("confusion_matrix", "per_class_f1", "threshold_curve", "calibration", "class_map"):
         assert (out / "figures" / f"{name}.png").stat().st_size > 0
+
+
+def test_class_map_places_every_training_row() -> None:
+    train = _frame(12)
+    pipeline = build_pipeline(CONFIG).fit(train["text"], train["product"])
+
+    points = evaluate_stage.compute_class_map(pipeline, train)
+
+    assert list(points.columns) == ["x", "y", "product"]
+    assert len(points) == len(train)
+    assert points["product"].tolist() == train["product"].tolist()
+    assert points[["x", "y"]].notna().all().all()

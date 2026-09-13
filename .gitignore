@@ -39,12 +39,15 @@ coverage.xml
 htmlcov/
 
 # Trained models, MLflow runs, and derived data: regenerate with the stage commands
-models/
+models/*
 mlruns/
-data/processed/
+data/processed/*
 *.joblib
 *.pkl
 *.parquet
+# Shipped with the repo so the app runs without training
+!models/baseline.joblib
+!data/processed/test.parquet
 
 # Local databases / logs
 *.sqlite
