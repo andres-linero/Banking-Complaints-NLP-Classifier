@@ -22,8 +22,6 @@ lives at `frontend/app.py`.
 [How it works](#how-it-works) ·
 [Results](#results) ·
 [Quick start](#quick-start) ·
-[Serving](#serving) ·
-[Demo](#demo) ·
 [Development](#development) ·
 [Project layout](#project-layout)
 
@@ -60,30 +58,31 @@ predictions are in `reports/evaluate/`.
 ## Quick start
 
 Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). The trained model ships in the repo as
-`models/baseline.joblib`, with the frozen test set next to it, so nothing needs training. Run
-`uv sync` once, then open whichever door you want. All three load that one file.
+`models/baseline.joblib`, with the frozen test set next to it, so nothing needs training.
 
-| For | Door | Command |
-| --- | --- | --- |
-| People | Streamlit app | `uv run streamlit run frontend/app.py`, then open http://localhost:8501 |
-| Applications | FastAPI `POST /predict` | `uv run uvicorn complaints.api:app --reload`, then see [API](#api) |
-| AI agents | MCP tools over stdio | `uv sync --group mcp && uv run python -m complaints.mcp_server` |
+```bash
+uv sync
+```
 
-To retrain from the raw CSV, run the stages in order: `clean`, `split`, `train`, `evaluate`, each
-as `uv run python -m complaints.<stage>`. Each one prints what it wrote. Browse the runs with
-`uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`.
+One predictor, three doors. `predictor.py` loads the model once and, for each complaint, returns
+the product, the confidence, the class probabilities, a review flag, and a destination mailbox.
+Confidence under the threshold in `configs/serving.yaml` goes to the review queue; mailboxes are
+demo values from `configs/routing.yaml`. Pick a door:
 
-## Serving
+### [People · Streamlit demo](docs/demo.md)
 
-One predictor, three doors. `predictor.py` loads `models/baseline.joblib` once and, for each
-complaint, returns the product, the confidence, the class probabilities, a review flag, and a
-destination mailbox. Confidence below the threshold in `configs/serving.yaml` sends the complaint
-to the review queue instead of a team mailbox. Mailboxes come from `configs/routing.yaml`, one per
-class plus the review queue, and are demo values.
+```bash
+uv run streamlit run frontend/app.py     # http://localhost:8501
+```
 
-### API
+Two pages: one routes emails one at a time, the other routes the whole test set and shows it as
+an inbox. The walkthrough behind the title has screenshots and what each control does.
 
-Start FastAPI with the command in [Quick start](#quick-start), then call it from another terminal.
+### Applications · FastAPI
+
+```bash
+uv run uvicorn complaints.api:app --reload
+```
 
 | Endpoint | Returns |
 | --- | --- |
@@ -92,26 +91,30 @@ Start FastAPI with the command in [Quick start](#quick-start), then call it from
 | `GET /inbox?n=20&seed=42` | A seeded sample of held-out complaints wrapped as emails, `n` from 1 to 200 |
 | `GET /inbox/next` | One email per call, cycling through the default sample |
 
-One call, start to finish: the text becomes a TF-IDF vector, the model scores it, and the JSON
-below comes back from `POST /predict`. Confidence 0.35 is under the 0.75 threshold, so this one
-goes to the review queue.
+One call, start to finish. The text becomes a TF-IDF vector, the model scores it, and the JSON
+comes back. Confidence 0.35 is under the 0.75 threshold, so this one goes to the review queue.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/message-to-answer-dark.gif">
   <img src="docs/message-to-answer-light.gif" width="100%" alt="Animation: a complaint message becomes a vector, passes through the model, and returns a JSON prediction with product Bank account, confidence 0.35, needs_review true, and the review queue as destination">
 </picture>
 
-### Limits
+### AI agents · MCP
 
-Local demo only: no authentication, and no real email is sent. The model reads banking
-complaints; unrelated text is not guaranteed to be flagged for review.
+```bash
+uv sync --group mcp && uv run python -m complaints.mcp_server
+```
 
-## [Demo](docs/demo.md)
+Two tools over stdio: `classify_complaint(text)` returns the same fields as `POST /predict`, and
+`list_products()` returns the classes and the threshold.
 
-A two-page Streamlit app shows the model routing a bank's complaint inbox: one page handles
-emails one at a time, the other routes the whole test set and shows it as an inbox. The
-walkthrough in `docs/demo.md` has the launch command, screenshots of both pages, and what each
-control does.
+### Notes
+
+- Local demo only: no authentication, and no real email is sent. Unrelated text is not
+  guaranteed to be flagged for review.
+- To retrain from the raw CSV, run `clean`, `split`, `train`, `evaluate` in order, each as
+  `uv run python -m complaints.<stage>`. Browse the runs with
+  `uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`.
 
 ## Development
 
