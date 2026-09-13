@@ -59,39 +59,22 @@ predictions are in `reports/evaluate/`.
 
 ## Quick start
 
-Requirements: Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). Run all commands from
-the repo root. The training commands require `data/raw/complaints_banking_2023.csv`; serving
-and the demo require the saved model and frozen test set produced below.
-
-Each stage is one module under `src/complaints/`, runnable on its own, with a `--config` flag
-that points at `configs/runtime.yaml`. Command-line paths override the YAML.
+Python 3.10 to 3.12 and [uv](https://docs.astral.sh/uv/). Run everything from the repo root with
+`data/raw/complaints_banking_2023.csv` in place.
 
 ```bash
 uv sync                                  # create .venv from uv.lock
-uv run python -m complaints.data_study   # audit the raw CSV, optional
 uv run python -m complaints.clean        # labels and text cleaning
 uv run python -m complaints.split        # freeze train and test
 uv run python -m complaints.train        # fit the baseline, log to MLflow
 uv run python -m complaints.evaluate     # score the test set once
 ```
 
-Every stage prints what it wrote. Add `--no-learning-curve` or `--no-class-map` to evaluate to skip its two slowest figures.
+Each stage prints what it wrote. Reports are committed; parquet files, the model, and `mlruns/`
+regenerate in under a minute. Add `--no-learning-curve` to evaluate to skip its slowest figure.
+Every stage takes `--config` to point at a different `configs/runtime.yaml`.
 
-Note:
-
-- Reports are committed, so the numbers above can be checked without retraining. Parquet files,
-  the saved model, and the MLflow folder are git-ignored and regenerate in under a minute.
-- The test set is held out from training and read by evaluate and the demo. The split is frozen
-  to disk with the Complaint ID assignment, so every model is scored on identical rows.
-- Cleaning is not modelling. Lowercasing and n-grams are model choices in `baseline.yaml`, not
-  cleaning steps.
-- The classifier must output real probabilities. The review threshold depends on them.
-
-To browse the runs:
-
-```bash
-uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
-```
+Browse the MLflow runs with `uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`.
 
 ## Serving
 
